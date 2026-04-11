@@ -718,7 +718,16 @@ const closeHelpBtn = document.getElementById('closeHelpBtn');
 if (closeHelpBtn && helpModal) closeHelpBtn.onclick = () => { helpModal.style.display = 'none'; updateWindowHeight(); };
 
 const btnCheckUpd = document.getElementById('btnCheckUpdates');
-if (btnCheckUpd) btnCheckUpd.onclick = () => window.hexStack.openExternal('https://app.lemonsqueezy.com/my-orders/');
+if (btnCheckUpd) {
+    btnCheckUpd.onclick = () => {
+        const isActuallyPro = window.electronAPI.getIsProSync();
+        if (isActuallyPro) {
+            window.electronAPI.openExternal('https://app.lemonsqueezy.com/my-orders/');
+        } else {
+            window.electronAPI.openExternal('https://github.com/Mint-Logic/CapSize/releases');
+        }
+    };
+}
 const btnUpgradePro = document.getElementById('btnUpgradePro');
 if (btnUpgradePro) btnUpgradePro.onclick = (e) => { e.preventDefault(); window.hexStack.openExternal("https://mintlogic.lemonsqueezy.com/checkout/buy/4959c488-38ff-4796-bd34-1f555721989e"); };
 
