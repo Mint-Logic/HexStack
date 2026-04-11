@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self';">
+    <style>
+        body { margin: 0; overflow: hidden; background: transparent; cursor: none; user-select: none; }
+        #bgCanvas { display: block; position: absolute; top: 0; left: 0; }
+        
+        /* 1. THE PREMIUM LENS (Now in HexStack Purple) */
+        #loupe {
+            position: absolute; pointer-events: none; width: 150px; height: 150px;
+            border-radius: 50%; 
+            border: 2px solid #BB86FC; /* The true HexStack theme color */
+            background: #000;
+            overflow: hidden; 
+            /* Outer shadow + Purple Ambient Glow + Deep Inner Vignette */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8), 
+                        0 0 15px rgba(187, 134, 252, 0.25),
+                        inset 0 0 30px rgba(0,0,0,0.9); 
+            display: none; z-index: 100;
+        }
+
+        /* THE SECRET SAUCE: The Glass Glare Reflection */
+        #loupe::after {
+            content: '';
+            position: absolute;
+            top: 2%; 
+            left: 5%; 
+            width: 90%; 
+            height: 45%;
+            /* Creates a curved crescent shape */
+            border-radius: 50% 50% 10% 10% / 90% 90% 10% 10%;
+            /* Fades from bright white at the very top edge to completely invisible */
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+            z-index: 105; /* Floats above the magnified pixels */
+        }
+        
+        #loupeCanvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        
+        #gridOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
+            background-size: 10px 10px; z-index: 101;
+        }
+               
+        /* 3. OBSIDIAN GLASS LABEL */
+        #hexLabel {
+            position: absolute; 
+            background: linear-gradient(180deg, rgba(12, 14, 16, 0.82), rgba(0, 0, 0, 0.95));
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            
+            color: #BB86FC; /* Default to HexStack Purple before JS takes over */
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            font-family: 'Segoe UI', monospace;
+            font-size: 14px; 
+            font-weight: bold; 
+            pointer-events: none; display: none; z-index: 103; 
+            
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-top: 1px solid rgba(255, 255, 255, 0.2); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+    <div id="loupe">
+        <canvas id="loupeCanvas" width="150" height="150"></canvas>
+        <div id="gridOverlay"></div>        
+    </div>
+    <div id="hexLabel">#FFFFFF</div>
+    <script src="picker.js"></script>
+</body>
+</html>

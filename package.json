@@ -1,0 +1,75 @@
+{
+  "name": "hexstack",
+  "productName": "HexStack",
+  "version": "1.0.0",
+  "description": "High-performance continuous color picker and palette manager.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:pro": "cross-env TEST_PRO_MODE=true electron .",
+    "build": "node build.js core"
+  },
+  "keywords": [
+    "color",
+    "picker",
+    "palette",
+    "hex",
+    "design"
+  ],
+  "author": "Mint Logic",
+  "license": "MIT",
+  "build": {
+    "appId": "com.mintlogic.hexstack",
+    "productName": "HexStack",
+    "directories": {
+      "output": "dist/core"
+    },
+    "files": [
+      "**/*",
+      "!dist/*",
+      "!node_modules/*",
+      "!**/*.{ts,tsx}",
+      "!build.js"
+    ],
+    "fileAssociations": [
+      {
+        "ext": "mint",
+        "name": "Mint Logic Cryptographic Seal",
+        "description": "Hardware License Shard for Mint Logic Pro",
+        "icon": "mint-icon.ico",
+        "role": "Viewer"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "executableName": "HexStack"
+    },
+    "nsis": {
+      "artifactName": "HexStack Core Setup ${version}.${ext}",
+      "shortcutName": "HexStack",
+      "uninstallDisplayName": "HexStack",
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "icon.png"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "node-machine-id": "^1.1.12"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^39.2.7",
+    "electron-builder": "^24.13.3"
+  }
+}
