@@ -332,13 +332,18 @@ const renderList = (history, type) => {
                 <div class="click-hint">Click Code to Copy</div>
                 <button class="action-btn del-btn ${item.pinned ? 'disabled' : ''}" title="${item.pinned ? 'Unfavorite to delete' : 'Delete'}" style="margin-left: auto;"><i class="fa-solid fa-trash"></i></button>
             </div>
-            <div class="item-body">
-                <div class="color-preview" style="background:${item.hex}"></div>
-                <div class="static-shades">${shadesHTML}</div>
-                <div style="display:flex; flex-direction:column; flex-grow:1; margin-left:3px;">
-                    <div class="main-code">${Utils.escapeHTML(displayCode)}</div>
-                </div>
-                <div class="label-wrap"><div class="label-box" contenteditable="true">${Utils.escapeHTML(item.label || '')}</div></div>
+            <div class="item-body" style="display: flex; align-items: center;">
+    <div class="color-preview" style="background:${item.hex}; flex-shrink: 0;"></div>
+    <div class="static-shades" style="flex-shrink: 0;">${shadesHTML}</div>
+    
+    <div style="display:flex; flex-direction:column; min-width: 180px; margin-left:6px; flex-shrink: 0;">
+        <div class="main-code">${Utils.escapeHTML(displayCode)}</div>
+    </div>
+    
+    <div class="label-wrap" style="flex: 1; margin-top: 4px; display: flex; overflow: hidden;">
+        <div class="label-box" contenteditable="true" style="flex: 1; margin: 0;">${Utils.escapeHTML(item.label || '')}</div>
+    </div>
+</div>
             </div>
             ${IS_PRO_BUILD ? getProDetailsHTML(item, rgb) : ''}
         `;
@@ -394,11 +399,12 @@ const getProDetailsHTML = (item, rgb) => {
         
         <div class="setting-row" style="margin-bottom:8px;">
             <span style="font-size: 0.65rem; color: var(--accent); font-weight: bold;">SIMULATE VISION</span>
-            <select class="sim-select" style="width:100px;">
-                <option value="none">Normal</option>
-                <option value="protanopia">Protanopia</option>
-                <option value="deuteranopia">Deuteranopia</option>
-                <option value="tritanopia">Tritanopia</option>
+            <select class="sim-select" style="width:160px; padding-right: 5px;">
+                <option value="none" ${!item.simMode || item.simMode === 'none' ? 'selected' : ''}>Normal</option>
+                <option value="protanopia" ${item.simMode === 'protanopia' ? 'selected' : ''}>Protanopia</option>
+                <option value="deuteranopia" ${item.simMode === 'deuteranopia' ? 'selected' : ''}>Deuteranopia</option>
+                <option value="tritanopia" ${item.simMode === 'tritanopia' ? 'selected' : ''}>Tritanopia</option>
+                <option value="achromatopsia" ${item.simMode === 'achromatopsia' ? 'selected' : ''}>Achromatopsia (Grayscale)</option>
             </select>
         </div>
 
@@ -535,7 +541,24 @@ const attachProListeners = (li, item) => {
     const sim = li.querySelector('.sim-select');
     if(sim) {
         sim.onclick = e => e.stopPropagation();
-        sim.onchange = e => previewDiv.style.filter = (e.target.value === 'none') ? 'none' : `url(#${e.target.value})`;
+        
+        const applySim = (val) => {
+            const filterVal = (val === 'none') ? 'none' : `url(#${val})`;
+            previewDiv.style.filter = filterVal;
+            li.querySelectorAll('.shade-box, .harmony-chip, .new-swatch').forEach(el => {
+                el.style.filter = filterVal;
+            });
+        };
+
+        // 1. Re-apply the filter immediately if this item has a saved state
+        if (item.simMode) applySim(item.simMode);
+
+        sim.onchange = e => {
+            // 2. Save the state to the item object so it survives UI refreshes
+            item.simMode = e.target.value; 
+            applySim(item.simMode);
+            save(); // Optional: force a background save so it remembers next time you open the app
+        };
     }
     updateUIFromHsv(false);
 };
