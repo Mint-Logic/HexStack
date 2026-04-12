@@ -717,14 +717,16 @@ if (consoleBtn && settingsPanel) {
 const closeHelpBtn = document.getElementById('closeHelpBtn');
 if (closeHelpBtn && helpModal) closeHelpBtn.onclick = () => { helpModal.style.display = 'none'; updateWindowHeight(); };
 
-const btnCheckUpd = document.getElementById('btnCheckUpdates');
+// --- UPDATED SETTINGS BUTTONS (HEXSTACK) ---
+const btnCheckUpd = document.getElementById('btnCheckUpdates') || document.getElementById('btn-check-updates');
 if (btnCheckUpd) {
-    btnCheckUpd.onclick = () => {
-        const isActuallyPro = window.electronAPI.getIsProSync();
-        if (isActuallyPro) {
-            window.electronAPI.openExternal('https://app.lemonsqueezy.com/my-orders/');
+    btnCheckUpd.onclick = (e) => {
+        e.preventDefault();
+        // Uses the IS_PRO_BUILD constant defined at the top of the script
+        if (IS_PRO_BUILD) {
+            window.hexStack.openExternal('https://app.lemonsqueezy.com/my-orders/');
         } else {
-            window.electronAPI.openExternal('https://github.com/Mint-Logic/CapSize/releases');
+            window.hexStack.openExternal('https://github.com/Mint-Logic/HexStack/releases');
         }
     };
 }
