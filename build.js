@@ -21,14 +21,14 @@ const config = isPro ? {
     name: "HexStack Pro",
     id: "com.mintlogic.HexStack",
     exe: "HexStack",
-    artifact: "HexStack Pro Setup \${version}.\${ext}",
+    artifact: "HexStack Pro Setup ${version}.${ext}",
     shortcut: "HexStack",
     uninstall: "HexStack"
 } : {
     name: "HexStack Core",
     id: "com.mintlogic.HexStack.core",
     exe: "HexStackCore",
-    artifact: "HexStack Core Setup \${version}.\${ext}",
+    artifact: "HexStack Core Setup ${version}.${ext}",
     shortcut: "HexStack",
     uninstall: "HexStack"
 };
@@ -86,6 +86,12 @@ try {
     builderConfig.nsis = builderConfig.nsis || {};
     builderConfig.nsis.oneClick = false;
     builderConfig.nsis.perMachine = true;
+    
+    // --- NSIS INSTALLER CONFIGURATION ---
+    // Wire up the new background from the root folder
+    builderConfig.nsis.installerSidebar = "HexStack 164x314.bmp";
+    builderConfig.nsis.uninstallerSidebar = "HexStack 164x314.bmp";
+    // ------------------------------------
     
     const configPath = path.join(__dirname, 'dist', `temp_builder_config_${type}.json`);
     fs.writeFileSync(configPath, JSON.stringify(builderConfig, null, 2));
