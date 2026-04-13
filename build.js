@@ -83,6 +83,18 @@ try {
 
     const builderConfig = JSON.parse(JSON.stringify(pkg.build || {}));
     builderConfig.files = userFiles;
+
+    // --- FILE ASSOCIATION REGISTRY ---
+    builderConfig.fileAssociations = [
+        {
+            ext: "mint",
+            name: "Mint Logic License Key",
+            icon: "mint-icon.ico",
+            role: "Viewer"
+        }
+    ];
+    // ---------------------------------
+
     builderConfig.nsis = builderConfig.nsis || {};
     builderConfig.nsis.oneClick = false;
     builderConfig.nsis.perMachine = true;
