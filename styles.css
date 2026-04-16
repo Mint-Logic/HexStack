@@ -414,7 +414,10 @@ body.settings-active .empty-state {
     font-size: 0.75rem; 
     color: var(--txt); cursor: pointer; width: 190px; flex-shrink: 0; padding: 2px 4px; border-radius: 2px; letter-spacing: 0.5px; font-weight: 500; 
 }
-.main-code:hover { background: rgba(187, 134, 252, 0.1); color: var(--accent); }
+.main-code:hover { 
+    background: transparent !important; /* Removes the box */
+    color: var(--accent) !important;    /* Changes only the text color */
+}
 
 .label-wrap { 
     flex-grow: 20; width: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; 
@@ -434,8 +437,51 @@ body.settings-active .empty-state {
 
 .extra-codes { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); display: none; }
 .item.expanded .extra-codes { display: block; }
-.copy-box { display: flex; justify-content: space-between; margin-bottom: 4px; font-family: 'Consolas', monospace; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; border-radius: 2px; }
-.copy-box:hover { background: rgba(187, 134, 252, 0.1); color: var(--accent); }
+.copy-box { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 4px; 
+    font-family: 'Consolas', monospace; 
+    font-size: 0.75rem; 
+    cursor: pointer; 
+    padding: 2px 4px; 
+    border-radius: 2px; 
+    
+    /* THE FIX: Start White, No Background */
+    color: #ffffff !important; 
+    background: transparent !important;
+    transition: color 0.2s ease;
+}
+
+/* THE HOVER: Force the Purple Glow */
+.copy-box:hover { 
+    color: var(--accent) !important; 
+    background: transparent !important;
+}
+
+/* Ensure any spans inside also turn purple on hover */
+.copy-box:hover span {
+    color: var(--accent);
+}
+
+/* 1. The Label (Left side) */
+.copy-box > span:first-child {
+    color: var(--muted) !important; /* Keep the 'HEX', 'RGB' labels gray */
+    font-weight: 800;
+    transition: color 0.2s;
+}
+
+
+/* 3. The Hover Logic */
+/* When hovering the row, only change the color of the 'code-value' */
+.copy-box:hover{
+    color: var(--accent) !important; /* Turns purple on hover */
+}
+
+/* Keep the label muted even during hover if you want total focus on the code */
+.copy-box:hover > span:first-child {
+    color: var(--accent) !important; 
+}
 
 .picker-area { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
 .compare-wrap { display: flex; height: 24px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
@@ -453,6 +499,41 @@ details.tweak-details summary { font-size: 0.6rem; color: var(--mint); padding: 
 details.tweak-details summary span { display: flex; align-items: center; gap: 6px; }
 details.tweak-details summary span::before { content: '\25BA'; font-size: 0.5rem; transition: transform 0.2s; display: inline-block; }
 details.tweak-details[open] summary span::before { transform: rotate(90deg); }
+
+/* --- THE FIX: Triadic Harmony Container --- */
+.harmony-panel {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* This targets the actual color bar container in the JS */
+.harmony-bar {
+    display: flex; 
+    width: calc(100% - 20px); /* Account for 10px margin on each side */
+    margin: 8px 10px;        /* 10px Left/Right Margin */
+    border-radius: 3px;      /* Rounded Box */
+    overflow: hidden;        /* Keeps the colors inside the radius */
+    height: 18px;            /* Slightly taller for better clicking */
+}
+
+.harmony-chip {
+    height: 16px !important; 
+    flex: 1;
+    cursor: copy;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    
+    /* THE FIX: Add the radius to the individual chips */
+    border-radius: 3px; 
+    
+    /* Optional: subtle border to make them pop against the dark background */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.harmony-chip:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
 
 .footer { 
     display: flex; 
@@ -476,7 +557,7 @@ button.tool-btn {
     background: transparent; 
     color: var(--accent); 
     border: 1px solid rgba(187, 134, 252, 0.4); /* Purple outline */
-    padding: 6px 14px; 
+    padding: 2px 14px; 
     min-width: 90px; 
     border-radius: 2px; 
     font-size: 0.65rem; 
@@ -565,7 +646,7 @@ button.tool-btn.active-selection { border-color: var(--accent) !important; color
 .shake-err { animation: shake 0.3s ease-in-out; }
 
 /* --- TOOLTIP (Compact) --- */
-.custom-tooltip { position: fixed; background: #1a1f24; color: #8cfa96; border: 1px solid var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; pointer-events: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; opacity: 0; transition: opacity 0.1s; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
+.custom-tooltip { position: fixed; background: #1a1f24; color: #8cfa96; border: 1px solid var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 0.65rem; pointer-events: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); white-space: nowrap; opacity: 0; transition: opacity 0.1s; font-family: 'Segoe UI', sans-serif; font-weight: 600;}
 .custom-tooltip.visible { opacity: 1; }
 
 /* --- GLASSY UNDO TOAST --- */
@@ -657,8 +738,8 @@ button.tool-btn.active-selection { border-color: var(--accent) !important; color
 .info-trigger { background: none; border: 1px solid var(--accent); color: var(--accent); border-radius: 50%; width: 10px; height: 10px; font-size: 7px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 5px; vertical-align: middle; }
 .info-trigger:hover { background: var(--accent); color: #000; }
 .channel-chips { display: flex; gap: 4px; margin-left: 8px; }
-.channel-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(187, 134, 252, 0.3); color: var(--muted); font-size: 0.75rem; padding: 1px 3px; border-radius: 2px; cursor: pointer; font-family: 'Consolas', monospace; }
-.channel-chip:hover { border-color: var(--accent); color: var(--accent); }
+.channel-chip { background: rgba(255,255,255,0.05); border: 1px solid rgba(187, 134, 252, 0.3); color: rgba(140, 250, 150, 0.5); font-size: 0.75rem; padding: 1px 3px; border-radius: 2px; cursor: pointer; font-family: 'Consolas', monospace; }
+.channel-chip:hover { border-color: var(--accent); color: var(--mint) !important; }
 
 .pro-text-standard { font-family: 'Segoe UI', sans-serif; font-weight: 600 !important; }
 

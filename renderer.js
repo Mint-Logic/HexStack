@@ -408,14 +408,72 @@ const getProDetailsHTML = (item, rgb) => {
             </select>
         </div>
 
-        <div class="copy-box" data-code="${item.hex}" data-tip="Click to Copy HEX"><span>HEX</span> <span>${item.hex}</span></div>
-        <div class="copy-box" data-code="${argb}" data-tip="Click to Copy ARGB"><span>ARGB</span> <span>${argb}</span></div>
-        <div class="copy-box" data-code="${rgb.str}" data-tip="Click to Copy RGB"><span>RGB</span> <div style="display:flex; align-items:center;"><span style="margin-right:6px; font-weight:500; color:var(--accent);">${rgb.str}</span>${makeChips(rgb.arr)}</div></div>
-        <div class="copy-box" data-code="${ColorMath.hexToRgba(item.hex)}" data-tip="Click to Copy RGBA"><span>RGBA</span> <div style="display:flex; align-items:center;"><span style="margin-right:6px; font-weight:500; color:var(--accent);">${ColorMath.hexToRgba(item.hex)}</span>${makeChips([...rgb.arr, 1])}</div></div>
-        <div class="copy-box" data-code="${hsl.str}" data-tip="Click to Copy HSL"><span>HSL</span> <div style="display:flex; align-items:center;"><span style="margin-right:6px; font-weight:500; color:var(--accent);">${hsl.str}</span>${makeChips(hsl.arr)}</div></div>
-        <div class="copy-box" data-code="hsv(${Math.round(hsv.h)}, ${Math.round(hsv.s)}%, ${Math.round(hsv.v)}%)" data-tip="Click to Copy HSV"><span>HSV</span> <div style="display:flex; align-items:center;"><span style="margin-right:6px; font-weight:500; color:var(--accent);">hsv(${Math.round(hsv.h)}, ${Math.round(hsv.s)}%, ${Math.round(hsv.v)}%)</span>${makeChips([hsv.h, hsv.s, hsv.v])}</div></div>
-        <div class="copy-box" data-code="${hsva}" data-tip="Click to Copy HSVA"><span>HSVA</span> <div style="display:flex; align-items:center;"><span style="margin-right:6px; font-weight:500; color:var(--accent);">${hsva}</span>${makeChips([hsv.h, hsv.s, hsv.v, 1])}</div></div>
-        <div class="copy-box" data-code="${cmyk.str}" data-tip="Click to Copy CMYK"><span>CMYK</span> <div style="display:flex; align-items:center;"><span style="margin-right:6px; font-weight:500; color:var(--accent);">${cmyk.str}</span>${makeChips(cmyk.arr)}</div></div>
+        <div class="copy-box" data-code="${item.hex}">
+            <span>HEX</span> 
+            <div class="channel-chips">
+                <span>${item.hex}</span>
+            </div>
+        </div>
+        <div class="copy-box" data-code="${argb}">
+            <span>ARGB</span> 
+            <div class="channel-chips">
+                <span>${argb}</span>
+            </div>
+        </div>
+        <div class="copy-box" data-code="${rgb.str}">
+            <span>RGB</span> 
+            <div class="channel-chips">
+                <div style="display:flex; align-items:center;">
+                    <span style="margin-right:6px;">${rgb.str}</span>
+                    ${makeChips(rgb.arr)}
+                </div>
+            </div>
+        </div>
+        <div class="copy-box" data-code="${ColorMath.hexToRgba(item.hex)}">
+            <span>RGBA</span> 
+            <div class="channel-chips">
+                <div style="display:flex; align-items:center;">
+                    <span style="margin-right:6px;">${ColorMath.hexToRgba(item.hex)}</span>
+                    ${makeChips([...rgb.arr, 1])}
+                </div>
+            </div>
+        </div>
+        <div class="copy-box" data-code="${hsl.str}">
+            <span>HSL</span> 
+            <div class="channel-chips">
+                <div style="display:flex; align-items:center;">
+                    <span style="margin-right:6px;">${hsl.str}</span>
+                    ${makeChips(hsl.arr)}
+                </div>
+            </div>
+        </div>
+        <div class="copy-box" data-code="hsv(${Math.round(hsv.h)}, ${Math.round(hsv.s)}%, ${Math.round(hsv.v)}%)">
+            <span>HSV</span> 
+            <div class="channel-chips">
+                <div style="display:flex; align-items:center;">
+                    <span style="margin-right:6px;">hsv(${Math.round(hsv.h)}, ${Math.round(hsv.s)}%, ${Math.round(hsv.v)}%)</span>
+                    ${makeChips([hsv.h, hsv.s, hsv.v])}
+                </div>
+            </div>
+        </div>
+        <div class="copy-box" data-code="${hsva}">
+            <span>HSVA</span> 
+            <div class="channel-chips">
+                <div style="display:flex; align-items:center;">
+                    <span style="margin-right:6px;">${hsva}</span>
+                    ${makeChips([hsv.h, hsv.s, hsv.v, 1])}
+                </div>
+            </div>
+        </div>
+        <div class="copy-box" data-code="${cmyk.str}">
+            <span>CMYK</span> 
+            <div class="channel-chips">
+                <div style="display:flex; align-items:center;">
+                    <span style="margin-right:6px;">${cmyk.str}</span>
+                    ${makeChips(cmyk.arr)}
+                </div>
+            </div>
+        </div>
 
         <div class="contrast-panel" data-inverted="false">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -435,15 +493,15 @@ const getProDetailsHTML = (item, rgb) => {
         </div>
         
         <div class="harmony-panel" style="margin-top:8px;">
-            <div class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); margin-bottom:4px; text-transform:none; display:flex; align-items:center; gap:5px;">
-                    Triadic Matches <button class="info-trigger click-only" data-nano="3 colors evenly spaced (120°) on the color wheel. High contrast but balanced.">i</button>
-                    <span style="opacity:0.75; margin-left:auto; text-transform:none;">Click match to extract</span>
-                </div>
-                <div style="display:flex; width:100%; border-radius:3px; overflow:hidden;">
-                    <div class="harmony-chip" style="background:${triad[0]}; height:16px; flex:1;" data-hex="${triad[0]}"></div>
-                    <div class="harmony-chip" style="background:${triad[1]}; height:16px; flex:1;" data-hex="${triad[1]}"></div>
-                </div>
-            </div>
+    <div class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); margin-bottom:4px; text-transform:none; display:flex; align-items:center; gap:5px;">
+        Triadic Matches <button class="info-trigger click-only" data-nano="3 colors evenly spaced (120°) on the color wheel. High contrast but balanced.">i</button>
+        <span style="opacity:0.75; margin-left:auto; text-transform:none;">Click match to extract</span>
+    </div>
+    <div style="display:flex; width: calc(100% - 20px); margin: 0 10px; gap:6px;">
+        <div class="harmony-chip" style="background:${triad[0]};" data-hex="${triad[0]}"></div>
+        <div class="harmony-chip" style="background:${triad[1]};" data-hex="${triad[1]}"></div>
+    </div>
+</div>
         </div>
     </div>`;
 };
