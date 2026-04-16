@@ -92,7 +92,7 @@ if (!IS_PRO_BUILD) {
     if (spinDown) { spinDown.style.visibility = 'visible'; spinDown.style.opacity = "1"; spinDown.style.cursor = "pointer"; }
     if (formatSelect) { formatSelect.value = 'HEX'; formatSelect.disabled = true; }
     if (toggleLogBtn) { toggleLogBtn.classList.add('disabled'); toggleLogBtn.style.opacity = '0.5'; toggleLogBtn.setAttribute('data-tip', "Available in Pro version"); }
-    if (flushLogBtn) flushLogBtn.disabled = true;
+     if (flushLogBtn) { flushLogBtn.disabled = true; flushLogBtn.style.opacity = "0.3"; flushLogBtn.style.cursor = "default"; }
 } else {
     if (maxInput) { maxInput.max = "500"; maxInput.min = "1"; }
     if (spinUp) spinUp.style.visibility = 'visible';
