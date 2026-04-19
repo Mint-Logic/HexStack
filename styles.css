@@ -391,7 +391,20 @@ body.settings-active .empty-state {
     color: var(--muted); transition: 0.2s; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; 
 }
 .action-btn:hover { color: var(--accent); }
-.star-btn.active { color: #f1c40f !important; }
+/* Change star from yellow to Mint */
+.star-btn.active { 
+    color: var(--mint) !important; 
+}
+
+/* Add the left-side mint border to the card when pinned */
+.item:has(.star-btn.active) {
+    border-left: 3px solid var(--mint) !important;
+}
+
+/* Optional: Subtle glow to the pinned card to make it pop */
+.item:has(.star-btn.active) {
+    box-shadow: inset 4px 0 10px rgba(140, 250, 150, 0.05);
+}
 
 .del-btn { 
     background: none; border: none; cursor: pointer; 
