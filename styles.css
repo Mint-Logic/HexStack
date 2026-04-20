@@ -22,6 +22,11 @@ body {
     font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; 
     height: 100vh; width: 100%; overflow: hidden; border: 1px solid var(--brdr); border-radius: 10px;
     -webkit-app-region: no-drag; position: relative; 
+    
+    /* --- THE FLICKER FIXES --- */
+    transform: translateZ(0); 
+    backface-visibility: hidden; 
+    -webkit-font-smoothing: antialiased; 
 }
 
 /* --- GLOBAL CURSOR OVERRIDE --- */
@@ -75,8 +80,8 @@ button, input, select, .item, .color-preview, .shade-popup,
     user-select: none; 
     transition: all 0.3s ease; 
     
-    /* --- THE NEW VIBE --- */
-    background: repeating-linear-gradient(45deg, #0B0C0E, #0B0C0E 10px, #0E1012 10px, #0E1012 20px) !important; 
+    /* --- SMARTCLIP SYNC --- */
+    background: rgba(11, 12, 14, 0.97) !important;
     border-bottom: 1px solid var(--accent);
     box-shadow: 0 4px 20px rgba(187, 134, 252, 0.15); /* Soft neon bleed effect */
     border-top-left-radius: 9px; 
@@ -210,9 +215,9 @@ h3 {
     min-height: 0;
     -webkit-app-region: no-drag;
     
-    /* --- DARK GRAY GLASS BACKGROUND --- */
-    background: rgba(26, 31, 36, .95); /* Deep dark gray frame color, highly opaque */
-    backdrop-filter: blur(12px);       /* Thick frosted effect */
+    /* --- DARK GRAY BACKGROUND --- */
+    background: rgba(26, 31, 36, .95); 
+    /* backdrop-filter: blur(12px); KILLED TO PREVENT GPU FLICKER */
 }
 
 body:not(.settings-active) .content {
@@ -557,7 +562,7 @@ details.tweak-details[open] summary span::before { transform: rotate(90deg); }
     height: 40px; 
     -webkit-app-region: no-drag; 
     
-    background: repeating-linear-gradient(45deg, #0B0C0E, #0B0C0E 10px, #0E1012 10px, #0E1012 20px) !important; 
+   background: rgba(11, 12, 14, 0.97) !important;
     border-top: 1px solid var(--accent); 
     box-shadow: 0 -4px 20px rgba(187, 134, 252, 0.15); /* Purple neon bleed */
     z-index: 10; 
@@ -958,8 +963,8 @@ div[style*="border: 1px dashed #FF007F"] {
     top: 0; left: 0;
     width: 100%; height: 100%;
     background: rgba(10, 10, 10, 0.85);
-    backdrop-filter: blur(8px);
-    display: none; /* Hidden by default */
+    /* backdrop-filter: blur(8px); KILLED TO PREVENT DRAG-AND-DROP FLICKER */
+    display: none; 
     align-items: center;
     justify-content: center;
     z-index: 9999;

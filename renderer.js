@@ -260,9 +260,9 @@ const updateSelectionState = () => {
     const currentSort = globalSettings.sortMode || 'TIME';
     
     if (sortBtn) {
-        if (selSize > 0) sortBtn.innerHTML = `<span style="color:var(--accent)">${selSize} SELECTED</span>`;
-        else sortBtn.innerHTML = currentSort === 'ITEMS' ? `<span style="color:var(--accent)">${count} ITEMS</span>` : `SORT: ${currentSort}`;
-    }
+    if (selSize > 0) sortBtn.innerHTML = `<span style="color:var(--accent)">${selSize} SELECTED</span>`;
+    else sortBtn.innerHTML = currentSort === 'ITEMS' ? `<span style="color:var(--txt)">ITEMS: </span><span style="color:var(--txt)">${count}</span>` : `SORT: ${currentSort}`;
+}
     
     if (selSize > 0) {
         document.body.classList.add('selection-mode'); 
