@@ -14,36 +14,54 @@
             background: #000;
             overflow: hidden; 
             /* Outer shadow + Purple Ambient Glow + Deep Inner Vignette */
-            box-shadow: 0 15px 40px rgba(0,0,0,0.8), 
+            box-shadow: 0 0px 20px rgba(0,0,0,0.4), 
                         0 0 15px rgba(187, 134, 252, 0.25),
                         inset 0 0 30px rgba(0,0,0,0.9); 
             display: none; z-index: 100;
         }
-
-        /* THE SECRET SAUCE: The Glass Glare Reflection */
-        #loupe::after {
-            content: '';
-            position: absolute;
-            top: 2%; 
-            left: 5%; 
-            width: 90%; 
-            height: 45%;
-            /* Creates a curved crescent shape */
-            border-radius: 50% 50% 10% 10% / 90% 90% 10% 10%;
-            /* Fades from bright white at the very top edge to completely invisible */
-            background: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
-            pointer-events: none;
-            z-index: 105; /* Floats above the magnified pixels */
-        }
         
         #loupeCanvas { width: 100%; height: 100%; image-rendering: pixelated; }
-        
-        #gridOverlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), 
-                              linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
-            background-size: 10px 10px; z-index: 101;
-        }
+
+#centerDot {
+    position: absolute;
+    /* THE SUB-PIXEL SHIFT: Moves the dot 1 physical pixel at 200% scale */
+    top: 74.5px; 
+    left: 74.5px;
+    width: 12px; 
+    height: 12px;
+    /* Negative margin perfectly centers the 12px box over the 74.5px point */
+    margin-top: -6px;
+    margin-left: -6px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+    z-index: 104;
+    pointer-events: none;
+}
+
+#centerDot::after {
+    content: '';
+    position: absolute;
+    /* THE FIX: Use percentages to center relative to the 12px parent */
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 2px;
+    background: #BB86FC;
+    /* Translate ensures the 2px dot stays in the center of the 12px box */
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 4px #BB86FC;
+}
+
+#gridOverlay {
+    position: absolute; 
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), 
+                      linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
+    background-size: 10px 10px; 
+    /* Offset grid lines to match the center-pixel shift */
+    background-position: 5.5px 5.5px; 
+    z-index: 101;
+}
                
         /* 3. OBSIDIAN GLASS LABEL */
         #hexLabel {
@@ -70,7 +88,8 @@
     <canvas id="bgCanvas"></canvas>
     <div id="loupe">
         <canvas id="loupeCanvas" width="150" height="150"></canvas>
-        <div id="gridOverlay"></div>        
+        <div id="gridOverlay"></div> 
+        <div id="centerDot"></div> </div>       
     </div>
     <div id="hexLabel">#FFFFFF</div>
     <script src="picker.js"></script>

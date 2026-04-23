@@ -199,19 +199,35 @@ const refresh = () => {
         const contentArea = document.querySelector('.content');
         if (contentArea) contentArea.classList.toggle('compact-mode', !!globalSettings.compactMode);
 
+        // 1. Get the raw Uppercase value for the logic
+        const rawSortMode = (data.sortMode || 'TIME').toUpperCase();
+        
+        // 2. Prepare the list
         fullHistory = (data.colors || []).filter(c => c && c.hex && c.hex.startsWith('#'));
-        systemLogs = data.logs || [];
-        renderLogs();
-        
-        const currentSort = globalSettings.sortMode || 'TIME';
-        if (sortBtn) sortBtn.textContent = `SORT: ${currentSort}`;
-        
         let displayHistory = [...fullHistory];
+
+        // 3. Perform the Sort using the raw Uppercase value
         displayHistory.sort((a, b) => {
             if (a.pinned !== b.pinned) return b.pinned ? 1 : -1;
-            if (currentSort === 'HUE') return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
+            
+            if (rawSortMode === 'HUE') {
+                return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
+            }
+            // THE FIX: 'ITEMS' just shows the natural order (no Hue/Time shift)
+            if (rawSortMode === 'ITEMS') {
+                return 0; 
+            }
+            
+            // Default: TIME
             return b.timestamp - a.timestamp;
         });
+
+        // 4. Update the Button Text with Title Case
+        if (sortBtn) {
+            const prettyMode = rawSortMode.charAt(0).toUpperCase() + rawSortMode.slice(1).toLowerCase();
+            // This is purely for the UI label
+            sortBtn.textContent = rawSortMode === 'ITEMS' ? `Items: ${displayHistory.length}` : `Sort: ${prettyMode}`;
+        }
 
         renderList(displayHistory, (!IS_PRO_BUILD ? 'HEX' : (globalSettings.codeType || 'HEX')));
     });
@@ -254,14 +270,23 @@ const renderLogs = () => {
     }
 };
 
+const toTitleCase = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
 const updateSelectionState = () => {
     const selSize = selectedItems.size;
     const count = fullHistory.length;
-    const currentSort = globalSettings.sortMode || 'TIME';
+    // Apply Title Case to the sort mode
+    const currentSort = toTitleCase(globalSettings.sortMode || 'Time'); 
     
     if (sortBtn) {
-    if (selSize > 0) sortBtn.innerHTML = `<span style="color:var(--accent)">${selSize} SELECTED</span>`;
-    else sortBtn.innerHTML = currentSort === 'ITEMS' ? `<span style="color:var(--txt)">ITEMS: </span><span style="color:var(--txt)">${count}</span>` : `SORT: ${currentSort}`;
+    sortBtn.onclick = () => {
+        let nextSort = 'TIME';
+        // Check against the raw uppercase setting
+        if (globalSettings.sortMode === 'TIME') nextSort = 'HUE';
+        else if (globalSettings.sortMode === 'HUE') nextSort = 'ITEMS';
+        
+        saveSetting('sortMode', nextSort, true);
+    };
 }
     
     if (selSize > 0) {

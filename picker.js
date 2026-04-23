@@ -1,46 +1,5 @@
 // --- DYNAMIC CSS INJECTION ---
-const style = document.createElement('style');
-style.innerHTML = `
-    body { margin: 0; overflow: hidden; background: transparent; }
-    #bgCanvas { position: absolute !important; top: 0 !important; left: 0 !important; z-index: 1 !important; cursor: crosshair !important; }
-    
-    #loupe { 
-        position: absolute !important; 
-        z-index: 99999 !important; 
-        width: 150px !important; 
-        height: 150px !important; 
-        box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 5px 15px rgba(0,0,0,0.6) !important; 
-        border-radius: 50% !important; 
-        overflow: hidden !important; 
-        pointer-events: none !important; 
-    }
-    
-    #loupeCanvas { 
-        width: 150px !important; 
-        height: 150px !important; 
-        display: block !important;
-    }
-    
-    #loupe::before, #loupe::after { display: none !important; opacity: 0 !important; background: none !important; box-shadow: none !important; }
-    
-    #hexLabel { 
-        position: absolute !important; 
-        z-index: 99999 !important; 
-        pointer-events: none !important; 
-        font-family: 'Segoe UI', sans-serif !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        background: rgba(20, 22, 26, 0.95) !important;
-        padding: 6px 10px !important;
-        border-radius: 4px !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-bottom-width: 3px !important;
-        white-space: nowrap !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-`;
-document.head.appendChild(style);
+
 
 const bgCanvas = document.getElementById('bgCanvas');
 const bgCtx = bgCanvas.getContext('2d'); 
@@ -130,19 +89,21 @@ function updatePicker() {
     label.style.left = '0px';
     label.style.top = '0px';
 
-    const physX = Math.floor(cursorX * scaleFactor);
-    const physY = Math.floor(cursorY * scaleFactor);
+    const physX = Math.floor(cursorX * scaleFactor) + 0.5;
+    const physY = Math.floor(cursorY * scaleFactor) + 0.5;
     const cropSize = (LOUPE_SIZE / ZOOM_LEVEL) * scaleFactor;
     
     loupeCtx.clearRect(0, 0, LOUPE_SIZE, LOUPE_SIZE);
     loupeCtx.imageSmoothingEnabled = false;
     
     try {
+        // Draw centered on the .5 coordinate
         loupeCtx.drawImage(shadowCanvas, physX - cropSize / 2, physY - cropSize / 2, cropSize, cropSize, 0, 0, LOUPE_SIZE, LOUPE_SIZE);
     } catch(e) {}
 
-    const pX = Math.min(Math.max(0, physX), bgCanvas.width - 1);
-    const pY = Math.min(Math.max(0, physY), bgCanvas.height - 1);
+    // Sample from the same centered physical coordinate
+    const pX = Math.floor(physX);
+    const pY = Math.floor(physY);
 
     const p = shadowCtx.getImageData(pX, pY, 1, 1).data;
     const hex = `#${p[0].toString(16).padStart(2,'0')}${p[1].toString(16).padStart(2,'0')}${p[2].toString(16).padStart(2,'0')}`.toUpperCase();
@@ -197,12 +158,12 @@ window.addEventListener('contextmenu', (e) => {
 
 function selectColor() {
     if (!screenImg) return;
-    const physX = Math.floor(cursorX * scaleFactor);
-    const physY = Math.floor(cursorY * scaleFactor);
+    const physX = Math.floor(cursorX * scaleFactor) + 0.5;
+    const physY = Math.floor(cursorY * scaleFactor) + 0.5;
     const pX = Math.min(Math.max(0, physX), bgCanvas.width - 1);
     const pY = Math.min(Math.max(0, physY), bgCanvas.height - 1);
     
-    const p = shadowCtx.getImageData(pX, pY, 1, 1).data;
+    const p = shadowCtx.getImageData(Math.floor(physX), Math.floor(physY), 1, 1).data;
     const hex = `#${p[0].toString(16).padStart(2,'0')}${p[1].toString(16).padStart(2,'0')}${p[2].toString(16).padStart(2,'0')}`.toUpperCase();
     
     window.hexStack.colorSelected(hex);
