@@ -46,35 +46,6 @@ const chrome = {
 // ==========================================================
 const getEl = (id) => document.getElementById(id);
 
-const handleClipboardOutput = (text, label = "color") => {
-    let output = text;
-    
-    // 1. Strip hash if requested
-    if (globalSettings.stripHashEnabled && text.startsWith('#')) {
-        output = text.replace('#', '');
-    }
-
-    // 2. Use the setting we just synced in Landmark B
-    const format = (globalSettings.copyFormat || 'none').toLowerCase();
-    
-    // 3. Clean the label for code (e.g., "Sky Blue" -> "sky-blue")
-    const cleanLabel = (label || "color").toLowerCase().trim().replace(/\s+/g, '-');
-
-    // 4. THE LOGIC GATE: If format is 'none', it falls through to just return the hex
-    if (format === 'css-var') {
-        output = `--${cleanLabel}: ${output};`;
-    } else if (format === 'css-prop') {
-        output = `color: ${output};`;
-    } else if (format === 'json') {
-        output = `"${cleanLabel}": "${output}"`;
-    }
-
-    navigator.clipboard.writeText(output);
-    return output;
-};
-
-
-
 // 1. GET THE MODAL CONTAINER FIRST
 const helpModal = getEl('helpModal');
 
@@ -109,9 +80,6 @@ const spinUp = getEl('spinUp');
 const spinDown = getEl('spinDown');
 const uiScaleSelect = getEl('uiScaleSelect');
 const startupToggle = getEl('startupToggle');
-const autoCopyToggle = getEl('autoCopyToggle');
-const stripHashToggle = getEl('stripHashToggle');
-const copyFormatSelect = getEl('copyFormatSelect');
 
 const h3 = document.querySelector('h3');
 if (h3) h3.innerHTML = `<span style="position: relative; display: inline-block;"><span style="color:var(--accent)">Hex</span><span style="color:white">Stack</span><span class="edition-label ${IS_PRO_BUILD ? 'pro' : 'core'}" style="position: absolute; left: 100%; top: 0; margin-left: 4px;">${IS_PRO_BUILD ? 'PRO' : 'CORE'}</span></span>`;
@@ -203,7 +171,7 @@ const capture = (hex) => {
 };
 
 const refresh = () => {
-    chrome.storage.sync.get(['colors', 'logs', 'maxItems', 'codeType', 'alwaysOnTop', 'notificationsEnabled', 'compactMode', 'sortMode', 'tooltipsEnabled', 'launchOnStartup', 'uiScale', 'autoCopyEnabled', 'stripHashEnabled', 'copyFormat'], (data) => {
+    chrome.storage.sync.get(['colors', 'logs', 'maxItems', 'codeType', 'alwaysOnTop', 'notificationsEnabled', 'compactMode', 'sortMode', 'tooltipsEnabled', 'launchOnStartup', 'uiScale'], (data) => {
         globalSettings = { ...globalSettings, ...data, tooltipsEnabled: data.tooltipsEnabled !== false, notificationsEnabled: data.notificationsEnabled !== false };
 
         // --- THE LIMIT SETTINGS FIX ---
@@ -223,11 +191,7 @@ const refresh = () => {
         if(formatSelect) formatSelect.value = globalSettings.codeType || 'HEX';
         if(startupToggle) startupToggle.checked = !!globalSettings.launchOnStartup;
         if(uiScaleSelect) uiScaleSelect.value = globalSettings.uiScale || "1";
-        if(autoCopyToggle) autoCopyToggle.checked = !!data.autoCopyEnabled;
-        if(stripHashToggle) stripHashToggle.checked = !!data.stripHashEnabled;
-        if(copyFormatSelect) copyFormatSelect.value = data.copyFormat || 'none';
-        globalSettings.copyFormat = data.copyFormat || 'none';
-
+        
         const guideTooltipToggle = getEl('guideTooltipToggle');
         if(guideTooltipToggle) guideTooltipToggle.checked = globalSettings.tooltipsEnabled;
 
@@ -341,42 +305,11 @@ const updateSelectionState = () => {
 // ==========================================================
 const renderList = (history, type) => {
     const clipHeader = document.querySelector('.clip-history-header'); 
-    const historyBox = document.querySelector('.clip-history-box'); 
-    
     if (!list) return;
     list.innerHTML = '';
     
     updateSelectionState();
-
-    if (clipHeader) {
-        clipHeader.style.display = 'flex'; 
-        clipHeader.style.alignItems = 'center';
-        
-        // 1. Cleanup: Remove the old external badge if it's still stuck in the DOM
-        const oldBadge = clipHeader.querySelector('.history-count-badge');
-        if (oldBadge) oldBadge.remove();
-
-        // 2. Format the inner box to span the full width and hold both texts
-        if (historyBox) {
-            const maxLimit = globalSettings.maxItems || (IS_PRO_BUILD ? 100 : 50);
-            
-            // Turn the box into a flex row to push the items apart
-            historyBox.style.display = 'flex';
-            historyBox.style.justifyContent = 'space-between';
-            historyBox.style.alignItems = 'baseline'; 
-            
-            // THE FIX: Increased padding from 10px to 30px to clear the search button
-            historyBox.style.paddingRight = '40px';   
-            
-            // Inject the Title on the left, and the #/# ITEMS on the right
-            historyBox.innerHTML = `
-                <span>COLOR HISTORY</span>
-                <span style="font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 11px; opacity: 0.9; letter-spacing: 0.5px;">
-                    ${fullHistory.length}/${maxLimit} ITEMS
-                </span>
-            `;
-        }
-    }
+    if (clipHeader) clipHeader.style.display = 'flex'; 
 
     if (!history.length) { 
         list.innerHTML = `<div class="empty-wrap"><li class="empty-state">HISTORY CLEAR</li></div>`; 
@@ -443,19 +376,7 @@ const renderList = (history, type) => {
         li.querySelector('.row-chk').onclick = (e) => { e.stopPropagation(); if (e.target.checked) selectedItems.add(item.hex); else selectedItems.delete(item.hex); updateSelectionState(); };
         li.querySelector('.star-btn').onclick = (e) => { e.stopPropagation(); item.pinned = !item.pinned; save(); };
         li.querySelector('.del-btn').onclick = (e) => { e.stopPropagation(); if (item.pinned) return; fullHistory = fullHistory.filter(h => h.hex !== item.hex); selectedItems.delete(item.hex); save(); showUndo(item); };
-        li.querySelector('.main-code').onclick = (e) => {
-    e.stopPropagation();
-    
-    // 1. Run the copy logic
-    const copiedText = handleClipboardOutput(e.target.innerText, item.label || 'color');
-    
-    // 2. Get the display name for the toast safely
-    const selectedText = copyFormatSelect ? 
-        copyFormatSelect.options[copyFormatSelect.selectedIndex].text : 
-        "Color";
-
-    UIManager.showTip(e.target, `Copied: ${selectedText}`);
-};
+        li.querySelector('.main-code').onclick = (e) => { e.stopPropagation(); navigator.clipboard.writeText(e.target.innerText); UIManager.showTip(e.target, "Copied!"); };
         
         const lbl = li.querySelector('.label-box');
         lbl.onblur = (e) => { 
@@ -736,21 +657,6 @@ const saveSetting = (key, val, requiresRender = false) => {
     });
 };
 
-if (copyFormatSelect) {
-    copyFormatSelect.onchange = () => {
-        const val = copyFormatSelect.value;
-        
-        // Update the local "brain" immediately
-        globalSettings.copyFormat = val; 
-        
-        // Save to the database
-        saveSetting('copyFormat', val); 
-    };
-}
-
-if (autoCopyToggle) autoCopyToggle.onchange = () => saveSetting('autoCopyEnabled', autoCopyToggle.checked);
-if (stripHashToggle) stripHashToggle.onchange = () => saveSetting('stripHashEnabled', stripHashToggle.checked);
-
 if (alwaysOnTopToggle) {
     alwaysOnTopToggle.onchange = () => { 
         saveSetting('alwaysOnTop', alwaysOnTopToggle.checked, false);
@@ -792,26 +698,11 @@ if (maxInput) {
         if (val > limit) { val = limit; UIManager.showTip(maxInput, `MAX ${limit} IN CORE`); }
         if (val < 1) val = 1;
         maxInput.value = val;
-        
-        // THE FIX: Change 'false' to 'true' to instantly update the (13/150) header text
-        saveSetting('maxItems', val, true);
+        saveSetting('maxItems', val, false);
     };
 }
-if (spinUp && maxInput) {
-    spinUp.onclick = () => { 
-        let current = parseInt(maxInput.value) || 0;
-        maxInput.value = current + 5; 
-        maxInput.dispatchEvent(new Event('change')); 
-    };
-}
-
-if (spinDown && maxInput) {
-    spinDown.onclick = () => { 
-        let current = parseInt(maxInput.value) || 0;
-        maxInput.value = current - 5; 
-        maxInput.dispatchEvent(new Event('change')); 
-    };
-}
+if (spinUp && maxInput) spinUp.onclick = () => { maxInput.stepUp(); maxInput.dispatchEvent(new Event('change')); };
+if (spinDown && maxInput) spinDown.onclick = () => { maxInput.stepDown(); maxInput.dispatchEvent(new Event('change')); };
 
 // ==========================================================
 // CHAPTER 7: GLOBAL ACTIONS & EVENT LISTENERS
@@ -833,17 +724,7 @@ if (sortBtn) {
 
 window.hexStack.onPickedColor((hex) => { 
     capture(hex); 
-    
-    // THE CLEANER PRO IMPLEMENTATION:
-    if (globalSettings.autoCopyEnabled) {
-        // This single line handles the clipboard AND the hash stripping
-        const copied = handleClipboardOutput(hex);
-        window.hexStack.showNotification("HexStack", `Copied to Clipboard: ${copied}`);
-    }
-    
-    if (globalSettings.notificationsEnabled) {
-        chrome.runtime.sendMessage({ type: "EXTRACT_NOTIFY", color: hex }); 
-    }
+    if (globalSettings.notificationsEnabled) chrome.runtime.sendMessage({ type: "EXTRACT_NOTIFY", color: hex }); 
 });
 
 if (closeAppBtn) closeAppBtn.onclick = () => window.hexStack.close(); 
@@ -908,47 +789,15 @@ if (dlBtn && IS_PRO_BUILD && exportMenu) {
         e.stopPropagation();
         exportMenu.style.display = exportMenu.style.display === 'flex' ? 'none' : 'flex';
     };
-    
     document.querySelectorAll('.export-item').forEach(item => {
         item.onclick = (e) => {
-    e.stopPropagation();
-    exportMenu.style.display = 'none';
-    const format = item.getAttribute('data-type').toLowerCase();
-    const itemsToExport = selectedItems.size > 0 ? fullHistory.filter(h => selectedItems.has(h.hex)) : fullHistory;
-
-    let payloadStr = "";
-
-    if (format === 'json') {
-        // 1. JSON FORMATTING (Dictionary)
-        const dict = {};
-        itemsToExport.forEach((color, index) => {
-            const keyName = color.label ? color.label.toLowerCase().trim().replace(/\s+/g, '-') : `color-${index + 1}`;
-            dict[keyName] = color.hex;
-        });
-        payloadStr = JSON.stringify(dict, null, 2); // Converts the object into a pretty-printed string
-
-    } else if (format === 'css') {
-        // 2. CSS FORMATTING (CSS Variables inside :root)
-        payloadStr = ":root {\n";
-        itemsToExport.forEach((color, index) => {
-            const keyName = color.label ? color.label.toLowerCase().trim().replace(/\s+/g, '-') : `color-${index + 1}`;
-            payloadStr += `  --${keyName}: ${color.hex};\n`;
-        });
-        payloadStr += "}\n";
-
-    } else if (format === 'txt') {
-        // 3. TXT FORMATTING (Clean readable list)
-        itemsToExport.forEach((color) => {
-            const prefix = color.label ? `${color.label} ` : '';
-            payloadStr += `${prefix}${color.hex}\n`;
-        });
-    }
-
-    // Send the PERFECTLY formatted text to the backend to be saved
-    window.hexStack.downloadHistory(payloadStr, format);
-};
+            e.stopPropagation();
+            exportMenu.style.display = 'none';
+            const format = item.getAttribute('data-type');
+            const itemsToExport = selectedItems.size > 0 ? fullHistory.filter(h => selectedItems.has(h.hex)) : fullHistory;
+            window.hexStack.downloadHistory(itemsToExport, format);
+        };
     });
-    
     document.addEventListener('click', () => { if (exportMenu) exportMenu.style.display = 'none'; });
 }
 

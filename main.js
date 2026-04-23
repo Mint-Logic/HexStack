@@ -512,36 +512,33 @@ ipcMain.on('nuke-license', () => {
 });
 
     // --- 1. UPGRADED EXPORT ENGINE ---
-    ipcMain.on('download-history', async (event, items, format) => {
+    ipcMain.on('download-history', async (event, payloadStr, format) => {
         if (!IS_PRO_BUILD) return; 
         
-        let content = '';
-        let ext = 'txt';
+        let ext = format || 'txt';
         let filterName = 'Text Files';
 
-        if (format === 'css') {
-            content = ':root {\n' + items.map((i, idx) => `  --color-${idx + 1}: ${i.hex}; /* ${i.label || 'Color ' + (idx+1)} */`).join('\n') + '\n}';
-            ext = 'css';
-            filterName = 'CSS Stylesheet';
-        } else if (format === 'json') {
-            const jsonObj = {};
-            items.forEach((i, idx) => { jsonObj[i.label || `color-${idx + 1}`] = i.hex; });
-            content = JSON.stringify({ theme: jsonObj }, null, 2);
-            ext = 'json';
-            filterName = 'JSON File';
-        } else {
-            content = items.map(i => `${i.hex} | ${i.label || 'No Label'}`).join('\n');
-        }
+        // Set the correct labels for the OS dialogue
+        if (format === 'css') filterName = 'CSS Stylesheet';
+        else if (format === 'json') filterName = 'JSON File';
 
-        const { filePath } = await dialog.showSaveDialog(mainWindow, { 
-            defaultPath: `HexStack_Palette.${ext}`,
-            filters: [{ name: filterName, extensions: [ext] }]
-        });
-        
-        if (filePath) {
-            fs.writeFileSync(filePath, content);
-            // Trigger the notification via IPC so it routes through our fixed engine
-            if (mainWindow) mainWindow.webContents.send('show-notification', { title: 'Export Complete', body: `Saved as .${ext}` });
+        try {
+            // Summon the native OS save window
+            const { filePath } = await dialog.showSaveDialog(mainWindow, { 
+                defaultPath: `HexStack_Palette.${ext}`,
+                filters: [{ name: filterName, extensions: [ext] }]
+            });
+            
+            // If the user clicks "Save" (and doesn't cancel)
+            if (filePath) {
+                // Write the pre-formatted string directly to the hard drive
+                fs.writeFileSync(filePath, payloadStr, 'utf-8');
+                
+                // Trigger the success toast
+                if (mainWindow) mainWindow.webContents.send('show-notification', { title: 'Export Complete', body: `Saved as .${ext}` });
+            }
+        } catch (error) {
+            console.error("Export failed:", error);
         }
     });
 	

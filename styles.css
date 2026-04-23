@@ -1042,7 +1042,7 @@ button path, .action-btn path, .tool-btn path {
 #consoleBtn {
     position: absolute !important;
     right: 0 !important;
-    top: -4px !important; /* Pulls it up so it sits exactly above the purple line */
+    top: -1px !important; /* Pulls it up so it sits exactly above the purple line */
     
     /* Force the custom look */
     background: rgba(11, 12, 14, 1) !important;

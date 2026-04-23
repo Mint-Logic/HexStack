@@ -143,42 +143,6 @@ export const Templates = {
     <option value="ARGB">ARGB</option>
                         </select>
                     </div>
-
-                    <div class="setting-row">
-    <div class="setting-info">
-        <div class="setting-label">Copy Format</div>
-        <div class="setting-desc">Wrap the output in specific code syntax.</div>
-    </div>
-    <select id="copyFormatSelect" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:4px 8px; border-radius:4px; font-size:11px;">
-        <option value="none">None (Raw Code)</option>
-        <option value="css-var">CSS Variable (--name: #hex)</option>
-        <option value="css-prop">CSS Property (color: #hex)</option>
-        <option value="json">JSON Property ("name": "#hex")</option>
-    </select>
-</div>
-
-                    <div class="setting-row">
-    <div class="setting-info">
-        <div class="setting-label">Auto-Copy on Pick</div>
-        <div class="setting-desc">Instantly copy color to clipboard after using the eyedropper.</div>
-    </div>
-    <label class="switch">
-        <input type="checkbox" id="autoCopyToggle">
-        <span class="slider"></span>
-    </label>
-</div>
-
-<div class="setting-row">
-    <div class="setting-info">
-        <div class="setting-label">Strip Hash Symbol</div>
-        <div class="setting-desc">Copies hex codes without the # prefix (e.g., FFFFFF).</div>
-    </div>
-    <label class="switch">
-        <input type="checkbox" id="stripHashToggle">
-        <span class="slider"></span>
-    </label>
-</div>
-
                     <div class="setting-row">
                         <div class="setting-label">Compact View <div class="setting-desc">Reduce row height to fit more colors on screen.</div></div>
                         <label class="switch" style="transform:scale(0.8); margin:0;"><input type="checkbox" id="compactToggle"><span class="slider"></span></label>
@@ -203,17 +167,10 @@ export const Templates = {
                             Click the star icon to permanently protect a color from being pushed off the stack. Click the Trash icon to delete, or click "Clear All" to remove all unpinned colors.
                         </div>
                         ${IS_PRO_BUILD ? `
-                            
                         <div class="g-item">
                             <strong><i class="fa-solid fa-terminal"></i> Terminal Recovery</strong>
                             Accidentally deleted a color? Open the System Terminal Log via the gear icon. Click any hex code in the log history to instantly recover it.
                         </div>
-
-                        <div class="g-item" style="grid-column: 1 / -1;">
-    <strong><i class="fa-solid fa-clipboard-check"></i> Smart Clipboard & Formatting</strong>
-    Configure your workflow in Preferences to automate data transfer. Enable <b>Auto-Copy on Pick</b> to instantly send extracted colors to your clipboard. Use <b>Copy Format</b> to automatically wrap codes in CSS variables or JSON strings, and toggle <b>Strip Hash Symbol</b> to format hex codes perfectly for environments like Android Studio or DirectX.
-</div>
-
                         <div class="g-item" style="grid-column: 1 / -1;">
                             <strong><i class="fa-solid fa-check-double"></i> Batch Exporting</strong>
                             Use the checkboxes on the left to select multiple colors, then click "Export" to save them as a .TXT, .CSS, or .JSON file, or copy them simultaneously.
