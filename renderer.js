@@ -243,27 +243,25 @@ const refresh = () => {
         let displayHistory = [...fullHistory];
 
         // 3. Perform the Sort using the raw Uppercase value
-        displayHistory.sort((a, b) => {
-            if (a.pinned !== b.pinned) return b.pinned ? 1 : -1;
-            
-            if (rawSortMode === 'HUE') {
-                return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
-            }
-            // THE FIX: 'ITEMS' just shows the natural order (no Hue/Time shift)
-            if (rawSortMode === 'ITEMS') {
-                return 0; 
-            }
-            
-            // Default: TIME
-            return b.timestamp - a.timestamp;
-        });
+        // Inside the refresh() function in renderer.js
+displayHistory.sort((a, b) => {
+    if (a.pinned !== b.pinned) return b.pinned ? 1 : -1;
+    
+    // We only need to check for HUE now, otherwise default to TIME
+    if (rawSortMode === 'HUE') {
+        return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
+    }
+    
+    // Default: TIME
+    return b.timestamp - a.timestamp;
+});
 
         // 4. Update the Button Text with Title Case
         if (sortBtn) {
-            const prettyMode = rawSortMode.charAt(0).toUpperCase() + rawSortMode.slice(1).toLowerCase();
-            // This is purely for the UI label
-            sortBtn.textContent = rawSortMode === 'ITEMS' ? `Items: ${displayHistory.length}` : `Sort: ${prettyMode}`;
-        }
+    // Converts "TIME" to "Time" or "HUE" to "Hue" for the UI
+    const prettyMode = toTitleCase(rawSortMode); 
+    sortBtn.textContent = `SORT: ${prettyMode}`;
+}
 
         renderList(displayHistory, (!IS_PRO_BUILD ? 'HEX' : (globalSettings.codeType || 'HEX')));
     });
@@ -314,17 +312,7 @@ const updateSelectionState = () => {
     // Apply Title Case to the sort mode
     const currentSort = toTitleCase(globalSettings.sortMode || 'Time'); 
     
-    if (sortBtn) {
-    sortBtn.onclick = () => {
-        let nextSort = 'TIME';
-        // Check against the raw uppercase setting
-        if (globalSettings.sortMode === 'TIME') nextSort = 'HUE';
-        else if (globalSettings.sortMode === 'HUE') nextSort = 'ITEMS';
-        
-        saveSetting('sortMode', nextSort, true);
-    };
-}
-    
+      
     if (selSize > 0) {
         document.body.classList.add('selection-mode'); 
         if(dlBtn) { dlBtn.textContent = `Export (${selSize})`; dlBtn.classList.add('active-selection'); }
@@ -372,7 +360,7 @@ const renderList = (history, type) => {
             historyBox.innerHTML = `
                 <span>COLOR HISTORY</span>
                 <span style="font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 11px; opacity: 0.9; letter-spacing: 0.5px;">
-                    ${fullHistory.length}/${maxLimit} ITEMS
+                    ITEMS: ${fullHistory.length}/${maxLimit} 
                 </span>
             `;
         }
@@ -824,9 +812,8 @@ if (pickBtn) {
 
 if (sortBtn) {
     sortBtn.onclick = () => {
-        let nextSort = 'TIME';
-        if (globalSettings.sortMode === 'TIME') nextSort = 'HUE';
-        else if (globalSettings.sortMode === 'HUE') nextSort = 'ITEMS';
+        // Clean toggle between TIME and HUE only
+        let nextSort = (globalSettings.sortMode === 'TIME') ? 'HUE' : 'TIME';
         saveSetting('sortMode', nextSort, true);
     };
 }
