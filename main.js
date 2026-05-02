@@ -172,6 +172,14 @@ if (!gotTheLock) {
 
         mainWindow.loadFile('index.html');
 
+        // Safely intercept Ctrl+Shift+I OR F12 only when HexStack is actively focused
+        mainWindow.webContents.on('before-input-event', (event, input) => {
+            if ((input.control && input.shift && input.key.toLowerCase() === 'i') || input.key === 'F12') {
+                event.preventDefault();
+                mainWindow.webContents.openDevTools({mode: 'detach'});
+            }
+        });
+
         mainWindow.webContents.setWindowOpenHandler(({ url }) => {
             if (isSafeUrl(url)) {
                 shell.openExternal(url);
@@ -359,6 +367,19 @@ if (!gotTheLock) {
         }, 150); 
     }
 
+    // --- ADD THE MISSING TOGGLE FUNCTION ---
+    function toggleWindow() {
+        if (mainWindow) {
+            if (mainWindow.isVisible()) {
+                mainWindow.hide();
+            } else {
+                if (mainWindow.isMinimized()) mainWindow.restore();
+                mainWindow.show();
+                mainWindow.focus();
+            }
+        }
+    }
+
     app.whenReady().then(async () => {
         // Force the app to wait for the hardware check before building the UI
         await initializeLicense(); 
@@ -367,6 +388,13 @@ if (!gotTheLock) {
         createTray();
         setTimeout(createPickerWindow, 500);
 
+        // --- MAIN WINDOW HOTKEY ---
+        // Change 'Space' to 'H' or 'C' if you run SmartClip at the same time!
+        globalShortcut.register('CommandOrControl+Shift+Space', () => {
+            toggleWindow();
+        });
+
+        // --- COLOR PICKER HOTKEY ---
         globalShortcut.register('CommandOrControl+Alt+C', () => {
             activatePicker();
         });
