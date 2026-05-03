@@ -16,16 +16,19 @@
 
 /* --- BASICS --- */
 * { box-sizing: border-box; }
-html { background: transparent !important; }
+html { 
+    background: transparent !important; 
+    height: 100%; /* Ensures the container follows the window height accurately */
+}
+
 body { 
     margin: 0; padding: 0; background-color: transparent !important; color: var(--txt); 
     font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; 
-    height: 100vh; width: 100%; overflow: hidden; border: 1px solid var(--brdr); border-radius: 10px;
+    height: 100vh; 
+    min-height: 100%;
+    width: 100%; overflow: hidden; border: 1px solid var(--brdr); border-radius: 10px;
     -webkit-app-region: no-drag; position: relative; 
-    
-    /* --- THE FLICKER FIXES --- */
-    transform: translateZ(0); 
-    backface-visibility: hidden; 
+   
     -webkit-font-smoothing: antialiased; 
 }
 
@@ -217,7 +220,8 @@ h3 {
     
     /* --- DARK GRAY BACKGROUND --- */
     background: rgba(26, 31, 36, .95); 
-    /* backdrop-filter: blur(12px); KILLED TO PREVENT GPU FLICKER */
+    transform: translateZ(0); 
+    will-change: transform, scroll-position;
 }
 
 body:not(.settings-active) .content {
@@ -668,13 +672,15 @@ button.tool-btn.active-selection { border-color: var(--accent) !important; color
 .custom-tooltip.visible { opacity: 1; }
 
 /* --- GLASSY UNDO TOAST --- */
+
 #undoToast { 
     position: fixed; 
-    bottom: -50px; 
+    bottom: 40px; /* Fixed anchor point */
     left: 50%; 
-    transform: translateX(-50%); 
-    background: rgba(--highlight, 0.15); 
-    backdrop-filter: blur(4px);            /* The Glass Effect */         
+    /* Use transform for the entrance animation instead of bottom */
+    transform: translateX(-50%) translateY(100px); 
+    background: rgba(187, 134, 252, 0.15); 
+    backdrop-filter: blur(4px);            
     border: 1px solid var(--accent); 
     color: var(--txt); 
     padding: 8px 16px;                   
@@ -683,11 +689,18 @@ button.tool-btn.active-selection { border-color: var(--accent) !important; color
     align-items: center; 
     gap: 12px;                           
     z-index: 20000; 
-    transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    opacity: 0;
+    pointer-events: none; /* Disable interaction when hidden */
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; 
     font-size: 0.75rem;                  
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); 
 }
-#undoToast.show { bottom: 40px; }
+
+#undoToast.show { 
+    transform: translateX(-50%) translateY(0); 
+    opacity: 1;
+    pointer-events: auto; /* Re-enable interaction when shown */
+}
 
 #undoBtn { 
     background: transparent; 

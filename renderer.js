@@ -181,7 +181,18 @@ const updateWindowHeight = Utils.debounce((args = null) => {
     if (content) content.style.overflowY = finalHeight >= maxHeight ? 'auto' : 'hidden';
 }, 50);
 
-window.addEventListener('resize', updateWindowHeight);
+window.addEventListener('resize', (e) => {
+    // requestAnimationFrame ensures we wait for the browser to finish its internal layout 
+    // before we try to measure the DOM. Double rAF guarantees the paint is complete.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            // Reset scroll to prevent DevTools from shoving the body up
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            updateWindowHeight(e);
+        });
+    });
+});
 
 // ==========================================================
 // CHAPTER 4: CORE LOGIC & STATE MANAGEMENT

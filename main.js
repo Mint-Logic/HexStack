@@ -180,6 +180,17 @@ if (!gotTheLock) {
             }
         });
 
+        mainWindow.webContents.on('devtools-closed', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        // Industry trick: Toggling opacity by 1% forces Chromium to dump the 
+        // compositor cache and resync with the Windows DWM surface.
+        mainWindow.setOpacity(0.99);
+        setTimeout(() => {
+            mainWindow.setOpacity(1.0);
+        }, 50);
+    }
+});
+
         mainWindow.webContents.setWindowOpenHandler(({ url }) => {
             if (isSafeUrl(url)) {
                 shell.openExternal(url);
