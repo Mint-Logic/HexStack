@@ -144,18 +144,31 @@ export const Templates = {
                         </select>
                     </div>
 
-                    <div class="setting-row">
-    <div class="setting-info">
-        <div class="setting-label">Copy Format</div>
-        <div class="setting-desc">Wrap the output in specific code syntax.</div>
+                    ${IS_PRO_BUILD ? `
+    <div class="setting-row">
+        <div class="setting-info">
+            <div class="setting-label">Copy Format</div>
+            <div class="setting-desc">Wrap the output in specific code syntax.</div>
+        </div>
+        <select id="copyFormatSelect" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:4px 8px; border-radius:4px; font-size:11px;">
+            <option value="none">None (Raw Code)</option>
+            <option value="css-var">CSS Variable (--name: #hex)</option>
+            <option value="css-prop">CSS Property (color: #hex)</option>
+            <option value="json">JSON Property ("name": "#hex")</option>
+        </select>
     </div>
-    <select id="copyFormatSelect" style="background:#1e1e1e; border:1px solid #444; color:#fff; padding:4px 8px; border-radius:4px; font-size:11px;">
-        <option value="none">None (Raw Code)</option>
-        <option value="css-var">CSS Variable (--name: #hex)</option>
-        <option value="css-prop">CSS Property (color: #hex)</option>
-        <option value="json">JSON Property ("name": "#hex")</option>
-    </select>
-</div>
+
+    <div class="setting-row">
+        <div class="setting-info">
+            <div class="setting-label">Strip Hash Symbol</div>
+            <div class="setting-desc">Copies hex codes without the # prefix (e.g., FFFFFF).</div>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="stripHashToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+` : ''}
 
                     <div class="setting-row">
     <div class="setting-info">

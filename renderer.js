@@ -49,6 +49,12 @@ const getEl = (id) => document.getElementById(id);
 const handleClipboardOutput = (text, label = "color") => {
     let output = text;
     
+    // THE GATE: Only allow advanced formatting if it's a Pro build
+    if (!IS_PRO_BUILD) {
+        navigator.clipboard.writeText(output);
+        return output;
+    }
+    
     // 1. Strip hash if requested
     if (globalSettings.stripHashEnabled && text.startsWith('#')) {
         output = text.replace('#', '');
