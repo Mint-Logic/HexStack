@@ -1028,17 +1028,77 @@ if (undoToast) {
 }
 
 window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'L') {
-        const keyJson = prompt("Paste the content of your HexStack .mint file here:");
-        if (keyJson) {
-            try { JSON.parse(keyJson); if (window.hexStack) window.hexStack.validateLicenseString(keyJson); } 
-            catch (err) { Utils.showSystemToast("INVALID JSON FORMAT", false); }
+    // Helper: Is the user typing?
+    const isEditingText = document.activeElement.tagName === 'INPUT' || document.activeElement.contentEditable === 'true';
+
+    // Track items for Arrow Key navigation
+    const items = Array.from(document.querySelectorAll('#historyList .item'));
+    let currentIndex = items.findIndex(item => item.classList.contains('keyboard-focus'));
+
+    // --- 1. ARROW KEY NAVIGATION (ZERO-GHOSTING) ---
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !isEditingText) {
+        e.preventDefault();
+        
+        // Hard reset: Remove the focus class from every single item immediately
+        document.querySelectorAll('.keyboard-focus').forEach(el => {
+            el.classList.remove('keyboard-focus');
+        });
+        
+        if (e.key === 'ArrowDown') {
+            currentIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+        } else {
+            currentIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
         }
+
+        if (items[currentIndex]) {
+            items[currentIndex].classList.add('keyboard-focus');
+            items[currentIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        return;
     }
+
+    // --- 2. THE 'S' HOTKEY (FIXED) ---
+    if ((e.key === 's' || e.key === 'S') && !isEditingText) { 
+        e.preventDefault(); 
+        const isHidden = settingsPanel.style.display === 'none' || settingsPanel.style.display === '';
+        
+        if (isHidden) {
+            settingsPanel.style.display = 'block'; 
+            document.body.classList.add('settings-active'); // Crucial for pixel-perfect height math
+            if (consoleBtn) consoleBtn.style.color = 'var(--accent)';
+        }
+        updateWindowHeight(); 
+        if(searchInput) searchInput.focus(); 
+        return; 
+    }
+
+    // --- 3. CONTEXTUAL 'ENTER' KEY ---
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Stop phantom button triggers
+
+        if (document.activeElement === searchInput) {
+            if (injectBtn) injectBtn.click();
+        } else if (document.activeElement.contentEditable === 'true') {
+            document.activeElement.blur(); // Triggers save
+        } else if (currentIndex !== -1) {
+            // Trigger copy on the highlighted keyboard item
+            const mainCodeEl = items[currentIndex].querySelector('.main-code');
+            if (mainCodeEl) mainCodeEl.click(); 
+        }
+        return;
+    }
+
+    // --- 4. ESCAPE & PRO BYPASS ---
+    if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        const keyJson = prompt("Paste HexStack .mint file:");
+        if (keyJson && window.hexStack) window.hexStack.validateLicenseString(keyJson);
+    }
+    
     if (e.key === 'Escape') {
-        if (exportMenu && exportMenu.style.display === 'flex') { exportMenu.style.display = 'none'; return; }
-        if (helpModal && helpModal.style.display === 'flex') { if (closeHelpBtn) closeHelpBtn.click(); return; }
-        if (window.hexStack && window.hexStack.close) window.hexStack.close();
+        if (exportMenu?.style.display === 'flex') { exportMenu.style.display = 'none'; return; }
+        if (helpModal?.style.display === 'flex') { closeHelpBtn.click(); return; }
+        if (currentIndex !== -1) { items[currentIndex].classList.remove('keyboard-focus'); return; }
+        window.hexStack.close();
     }
 });
 

@@ -204,32 +204,30 @@ export const Templates = {
                     <div class="st-title">Extraction & Management</div>
                     <div class="g-grid">
                         <div class="g-item">
-                            <strong><i class="fa-solid fa-eye-dropper"></i> Screen Extraction</strong>
-                            Click the glowing eyedropper to activate the crosshair. Click any pixel on your monitor to extract its code. <span style="color:var(--accent)">Right-Click</span> or press <span style="color:var(--accent)">Esc</span> to cancel.
+                            <strong><i class="fa-solid fa-eye-dropper"></i> Headless Extraction</strong>
+You can trigger the eyedropper with <span class="k-badge">Ctrl + Alt + P</span> even when HexStack is hidden. It captures colors to your history silently in the background.
                         </div>
                         <div class="g-item">
                             <strong><i class="fa-solid fa-keyboard"></i> Manual Injection</strong>
-                            Know the code? Press <span style="color:var(--accent)">S</span> to focus the top input bar, type it in, and press Enter to instantly inject it into your palette stack.
+                            Press <span class="k-badge">S</span> to focus the injector bar. Type any code (Hex, RGB, etc.) and hit Enter to add it to your palette instantly.
                         </div>
-                        <div class="g-item" ${!IS_PRO_BUILD ? 'style="grid-column: 1 / -1;"' : ''}>
-                            <strong><i class="fa-solid fa-star"></i> Pinning & Deletion</strong>
-                            Click the star icon to permanently protect a color from being pushed off the stack. Click the Trash icon to delete, or click "Clear All" to remove all unpinned colors.
+                        <div class="g-item" style="grid-column: 1 / -1;">
+                            <strong><i class="fa-solid fa-arrows-up-down"></i> Smart Navigation</strong>
+                            Use the <span class="k-badge">↑</span> <span class="k-badge">↓</span> arrows to browse your palette. The app will automatically scroll to keep your selection in view.
                         </div>
+                        
                         ${IS_PRO_BUILD ? `
-                            
+                        <div class="g-item">
+                            <strong><i class="fa-solid fa-star"></i> Pinning & Deletion</strong>
+                            Click the star icon to permanently protect a color. Click the Trash icon to delete, or click "Clear All" to remove all unpinned colors.
+                        </div>
                         <div class="g-item">
                             <strong><i class="fa-solid fa-terminal"></i> Terminal Recovery</strong>
                             Accidentally deleted a color? Open the System Terminal Log via the gear icon. Click any hex code in the log history to instantly recover it.
                         </div>
-
                         <div class="g-item" style="grid-column: 1 / -1;">
-    <strong><i class="fa-solid fa-clipboard-check"></i> Smart Clipboard & Formatting</strong>
-    Configure your workflow in Preferences to automate data transfer. Enable <b>Auto-Copy on Pick</b> to instantly send extracted colors to your clipboard. Use <b>Copy Format</b> to automatically wrap codes in CSS variables or JSON strings, and toggle <b>Strip Hash Symbol</b> to format hex codes perfectly for environments like Android Studio or DirectX.
-</div>
-
-                        <div class="g-item" style="grid-column: 1 / -1;">
-                            <strong><i class="fa-solid fa-check-double"></i> Batch Exporting</strong>
-                            Use the checkboxes on the left to select multiple colors, then click "Export" to save them as a .TXT, .CSS, or .JSON file, or copy them simultaneously.
+                            <strong><i class="fa-solid fa-clipboard-check"></i> Smart Clipboard</strong>
+                            Enable <b>Auto-Copy on Pick</b> in Preferences to automate data transfer. Use <b>Copy Format</b> to wrap codes in CSS variables or JSON strings instantly.
                         </div>
                         ` : ''}
                     </div>
@@ -267,30 +265,30 @@ export const Templates = {
                 <div class="g-grid" style="grid-template-columns: 1fr; gap: 8px;">
                      <div class="g-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
                         <span>Toggle App Visibility</span>
-                        <span class="k-badge">Ctrl + Shift + Space</span>
+                        <span class="k-badge">Ctrl + Alt + S</span>
                      </div>
                      <div class="g-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
-                        <span>Activate Eyedropper</span>
-                        <span class="k-badge">Ctrl + Alt + C</span>
+                        <span>Independent Eyedropper</span>
+                        <span class="k-badge">Ctrl + Alt + P</span>
                      </div>
                      <div class="g-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
                         <span>Focus Search/Inject Bar</span>
                         <span class="k-badge">S</span>
                      </div>
-                     <div class="g-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
-                        <span>Copy Selected</span>
-                        <span class="k-badge">Enter</span>
-                     </div>
-                     <div class="g-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px;">
-                        <span>Cancel Eyedropper</span>
-                        <span class="k-badge">Esc / Right-Click</span>
+                     
+                     <div class="g-item" style="display:flex; flex-direction:column; gap:8px; padding:10px 12px;">
+                         <div style="display:flex; justify-content:space-between; align-items:center;">
+                             <span style="font-weight:bold; color:var(--accent);">Contextual Action Key</span>
+                             <span class="k-badge">Enter</span>
+                         </div>
+                         <div style="font-size: 11px; color: #aaa; line-height: 1.5; padding-left: 4px;">
+                             &bull; <b>Palette:</b> Copies the highlighted color (via arrow keys).<br>
+                             &bull; <b>Search Bar:</b> Injects the typed code into history.<br>
+                             &bull; <b>Edit Mode:</b> Saves your custom label or hex edits.
+                         </div>
                      </div>
                 </div>
             </div>
-
-        </div>
-    </div>
-</div>
 `;
     }
 };

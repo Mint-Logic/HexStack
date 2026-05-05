@@ -405,10 +405,10 @@ if (!gotTheLock) {
             toggleWindow();
         });
 
-        // --- COLOR PICKER HOTKEY ---
-        globalShortcut.register('CommandOrControl+Alt+C', () => {
-            activatePicker();
-        });
+        // --- COLOR PICKER HOTKEY (P FOR PICK) ---
+globalShortcut.register('CommandOrControl+Alt+P', () => {
+    activatePicker();
+});
     });
 
     app.on('will-quit', () => { globalShortcut.unregisterAll(); });
@@ -621,18 +621,44 @@ ipcMain.on('nuke-license', () => {
 
             const finalH = Math.max(minH, Math.floor(newHeight));
 
+            // Grab the active monitor's dimensions (Now grabbing width and x as well)
             const currentScreen = screen.getDisplayMatching(currentBounds);
-            const { height: screenHeight, y: screenY } = currentScreen.workArea; 
+            const { height: screenHeight, width: screenWidth, x: screenX, y: screenY } = currentScreen.workArea; 
             
             let newY = currentBounds.y;
-            const projectedBottomEdge = newY + finalH;
-            const screenBottomEdge = screenY + screenHeight; 
+            let newX = currentBounds.x;
 
-            if (projectedBottomEdge > screenBottomEdge) {
-                newY = screenBottomEdge - finalH;
+            // --- THE 10px SAFE ZONE PADDING ---
+            const PADDING = 10;
+
+            // --- Y-AXIS BOUNDARY CHECK (Top/Bottom) ---
+            const projectedBottomEdge = newY + finalH;
+            const safeBottomEdge = screenY + screenHeight - PADDING;
+            const safeTopEdge = screenY + PADDING;
+
+            if (projectedBottomEdge > safeBottomEdge) {
+                newY = safeBottomEdge - finalH;
             }
-            if (newY < screenY) {
-                newY = screenY;
+            if (newY < safeTopEdge) {
+                newY = safeTopEdge;
+            }
+
+            // --- X-AXIS BOUNDARY CHECK (Left/Right) ---
+            const projectedRightEdge = newX + targetW;
+            const safeRightEdge = screenX + screenWidth - PADDING;
+            const safeLeftEdge = screenX + PADDING;
+
+            if (projectedRightEdge > safeRightEdge) {
+                newX = safeRightEdge - targetW; // Push left, leaving 10px gap
+            }
+            if (newX < safeLeftEdge) {
+                newX = safeLeftEdge; // Push right, leaving 10px gap
+            }
+
+            // --- THE NEW SAFETY CHECK ---
+            // Do not trigger a redraw if the window is already the correct size and position!
+            if (currentBounds.width === targetW && currentBounds.height === finalH && currentBounds.y === newY && currentBounds.x === newX) {
+                return; 
             }
 
             // 1. Temporarily unclamp limits so Windows and Chromium don't fight
@@ -641,7 +667,7 @@ ipcMain.on('nuke-license', () => {
             
             // 2. Safely apply the exact new bounds
             mainWindow.setBounds({ 
-                x: currentBounds.x, 
+                x: newX, 
                 y: newY, 
                 width: targetW, 
                 height: finalH 

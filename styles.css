@@ -1089,3 +1089,16 @@ button path, .action-btn path, .tool-btn path {
     
     transform: translateY(-1px) !important;
 }
+
+/* --- CLEAN KEYBOARD SELECTION (NO FROSTING) --- */
+li.item.keyboard-focus {
+    border: 1px solid var(--accent) !important;
+    background: rgba(20, 22, 26, 1) !important; /* Forces the solid card color */
+    box-shadow: none !important; /* Kills the outer glow/frosting */
+    transform: none !important; /* Keeps it perfectly still */
+}
+
+/* Ensure the "Click to Copy" hint doesn't pop up and blur the text */
+li.item.keyboard-focus .click-hint {
+    display: none !important;
+}
