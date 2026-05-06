@@ -181,17 +181,6 @@ export const Templates = {
     </label>
 </div>
 
-<div class="setting-row">
-    <div class="setting-info">
-        <div class="setting-label">Strip Hash Symbol</div>
-        <div class="setting-desc">Copies hex codes without the # prefix (e.g., FFFFFF).</div>
-    </div>
-    <label class="switch">
-        <input type="checkbox" id="stripHashToggle">
-        <span class="slider"></span>
-    </label>
-</div>
-
                     <div class="setting-row">
                         <div class="setting-label">Compact View <div class="setting-desc">Reduce row height to fit more colors on screen.</div></div>
                         <label class="switch" style="transform:scale(0.8); margin:0;"><input type="checkbox" id="compactToggle"><span class="slider"></span></label>
