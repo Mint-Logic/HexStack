@@ -228,11 +228,14 @@ You can trigger the eyedropper with <span class="k-badge">Ctrl + Alt + P</span> 
     <div class="setting-group">
         <div class="st-title">Advanced Color Math</div>
         <div class="g-grid">
-            <div class="g-item"style="grid-column: 1 / -1;"> 
+            <div class="g-item" style="grid-column: 1 / -1;">
                 <strong><i class="fa-solid fa-sliders"></i> Tweak & Refine</strong>
                 Open the Tweak panel to fine-tune Hue, Saturation, and Lightness. HexStack preserves your original swatch for side-by-side comparison until you commit the change.
             </div>
-            
+            <div class="g-item">
+                <strong><i class="fa-solid fa-circle-half-stroke"></i> WCAG A11y Audit</strong>
+                Instantly validate text legibility. Pro calculates contrast ratios, provides a Pass/Fail rating based on WCAG 4.5:1 standards, and lets you swap foreground/background to test colored text on Light/Dark modes.
+            </div>
             <div class="g-item">
                 <strong><i class="fa-solid fa-diagram-project"></i> Triadic Harmony</strong>
                 Automatically generate balanced complementary colors (120° apart). Perfect for finding accent colors that mathematically "fit" your primary brand hue.
@@ -240,10 +243,6 @@ You can trigger the eyedropper with <span class="k-badge">Ctrl + Alt + P</span> 
             <div class="g-item">
                 <strong><i class="fa-solid fa-eye"></i> Inclusive Vision</strong>
                 Preview your swatches through Protanopia, Deuteranopia, and Tritanopia simulators to ensure your UI remains accessible to color-blind users.
-            </div>
-            <div class="g-item"style="grid-column: 1 / -1;">
-                <strong><i class="fa-solid fa-circle-half-stroke"></i> WCAG A11y Audit</strong>
-                Instantly validate text legibility. Pro calculates contrast ratios, provides a Pass/Fail rating based on WCAG 4.5:1 standards, and lets you swap foreground/background to test colored text on Light/Dark modes. Click the target icon on any color to lock it as your custom Global Background. Then, open the Tweak panel on any other color to instantly see its WCAG contrast ratio against your locked target, allowing you to validate entire palettes simultaneously.
             </div>
         </div>
     </div>
