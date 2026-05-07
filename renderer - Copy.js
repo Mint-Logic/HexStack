@@ -19,6 +19,8 @@ let expandedHex = null;
 let tweakOpen = false;
 let globalSettings = { tooltipsEnabled: true, maxItems: IS_PRO_BUILD ? 100 : 50 }; 
 
+window.wcagTarget = null;
+
 // Mock Chrome Storage Engine for Electron
 const chrome = {
     storage: {
@@ -400,6 +402,20 @@ const renderList = (history, type) => {
             li.classList.add('no-transition');
             setTimeout(() => li.classList.remove('no-transition'), 50);
         }
+        
+        // --- NEW: TARGET BORDER GLOW ---
+        if (window.wcagTarget === item.hex) {
+            const isDark = ColorMath.getLuminance(item.hex) < 0.2;
+            const activeColor = isDark ? '#8CFA96' : item.hex;
+
+            li.style.setProperty('border-color', activeColor, 'important');
+            
+            if (item.pinned) {
+                li.style.setProperty('border-left-color', '#8CFA96', 'important');
+            }
+            
+            li.style.setProperty('box-shadow', `inset 0 0 0 1px ${activeColor}, 0 0 20px ${isDark ? 'rgba(140, 250, 150, 0.15)' : item.hex + '40'}`, 'important');
+        }
             
         const rgb = ColorMath.hexToRgb(item.hex);
         const displayCode = (!IS_PRO_BUILD) ? item.hex : 
@@ -422,8 +438,21 @@ const renderList = (history, type) => {
                 <div class="header-left">
                     <div class="chk-wrap"><input type="checkbox" class="custom-chk row-chk" ${selectedItems.has(item.hex) ? 'checked' : ''}></div>
                     <div class="left-actions">
-                        ${IS_PRO_BUILD ? `<button class="action-btn expand-btn"><i class="fa-solid fa-chevron-down"></i></button>` : ''}
-                        <button class="action-btn star-btn ${item.pinned ? 'active' : ''}" title="${item.pinned ? 'Unfavorite' : 'Favorite'}"><i class="fa-${item.pinned ? 'solid' : 'regular'} fa-star"></i></button>
+                        ${IS_PRO_BUILD ? `<button class="action-btn expand-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="6 9 12 17 18 9"></polyline></svg>
+                        </button>` : ''}
+
+                        ${IS_PRO_BUILD ? `<button class="action-btn target-btn" title="${window.wcagTarget === item.hex ? 'Clear Target' : 'Set as Contrast Target'}" style="font-size: 14px; ${window.wcagTarget === item.hex ? `color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; opacity: 1; filter: drop-shadow(0 0 4px ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : 'rgba(255, 255, 255, 0.2)'});` : ''}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width=".9em" height=".9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg>
+                        </button>` : ''}
+
+                        <button class="action-btn star-btn ${item.pinned ? 'active' : ''}" 
+        title="${item.pinned ? 'Unfavorite' : 'Favorite'}" 
+        style="${IS_PRO_BUILD ? 'margin-right: 8px; margin-left: -2px;' : 'margin-left: 6px; margin-right: 0px;'}">
+    <i class="fa-${item.pinned ? 'solid' : 'regular'} fa-star"; style="font-size: 0.65rem";></i>
+</button>
+                        
                     </div>
                 </div>
                 <div class="click-hint">Click Code to Copy</div>
@@ -448,6 +477,12 @@ const renderList = (history, type) => {
         li.querySelector('.row-chk').onclick = (e) => { e.stopPropagation(); if (e.target.checked) selectedItems.add(item.hex); else selectedItems.delete(item.hex); updateSelectionState(); };
         li.querySelector('.star-btn').onclick = (e) => { e.stopPropagation(); item.pinned = !item.pinned; save(); };
         li.querySelector('.del-btn').onclick = (e) => { e.stopPropagation(); if (item.pinned) return; fullHistory = fullHistory.filter(h => h.hex !== item.hex); selectedItems.delete(item.hex); save(); showUndo(item); };
+        const tgtBtn = li.querySelector('.target-btn');
+        if (tgtBtn) tgtBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            window.wcagTarget = (window.wcagTarget === item.hex) ? null : item.hex; 
+            refresh(); 
+        };
         li.querySelector('.main-code').onclick = (e) => {
     e.stopPropagation();
     
@@ -484,6 +519,16 @@ const getProDetailsHTML = (item, rgb) => {
     const cmyk = ColorMath.hexToCmyk(item.hex);
     const argb = ColorMath.hexToArgb(item.hex);
     const access = ColorMath.getAccessibility(item.hex);
+    
+    // --- CALCULATE DYNAMIC TARGET MATH ---
+    let targetRatio = "0.00", targetPass = "FAIL";
+    if (window.wcagTarget) {
+        const L1 = ColorMath.getLuminance(item.hex);
+        const L2 = ColorMath.getLuminance(window.wcagTarget);
+        const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+        targetRatio = ratio.toFixed(2);
+        targetPass = ratio >= 4.5 ? 'PASS' : 'FAIL';
+    }
     
     const triad = [
         ColorMath.hslToHex((hsl.arr[0] + 120) % 360, hsl.arr[1], hsl.arr[2]), 
@@ -599,7 +644,21 @@ const getProDetailsHTML = (item, rgb) => {
                 <span class="pro-text-standard" style="color:${access.black.pass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${access.black.pass}</span>
                 <div class="preview-box preview-black" style="background:${item.hex}; color:#000; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
             </div>
-        </div>
+            
+            ${window.wcagTarget ? (window.wcagTarget === item.hex ? `
+            <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed var(--accent); padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center;">
+                <span style="display:flex; align-items:center; font-size: 0.65rem; color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; font-weight: bold; letter-spacing: 1px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" style="margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg> 
+                    ACTIVE TARGET
+                </span>
+            </div>
+            ` : `
+            <div class="contrast-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <span style="display:flex; align-items:center;">Target (${targetRatio}:1) <div style="width:8px;height:8px;background:${window.wcagTarget};margin-left:4px;border-radius:2px;border:1px solid rgba(255,255,255,0.2);"></div></span>
+                <span class="pro-text-standard" style="color:${targetPass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${targetPass}</span>
+                <div class="preview-box preview-target" style="background:${window.wcagTarget}; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center; border: 1px solid rgba(255,255,255,0.1);">Sample Text</div>
+            </div>
+            `) : ''}
         
         <div class="harmony-panel" style="margin-top:8px;">
     <div class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); margin-bottom:4px; text-transform:none; display:flex; align-items:center; gap:5px;">
@@ -649,6 +708,12 @@ const attachProListeners = (li, item) => {
             previewBlack.style.background = isInverted ? '#000' : newHex;
             previewBlack.style.color = isInverted ? newHex : '#000';
         }
+        
+        const previewTarget = li.querySelector('.preview-target');
+        if (previewTarget && window.wcagTarget) {
+            previewTarget.style.background = isInverted ? window.wcagTarget : newHex;
+            previewTarget.style.color = isInverted ? newHex : window.wcagTarget;
+        }
     };
 
     const handleDrag = (e, type) => {
@@ -684,7 +749,7 @@ const attachProListeners = (li, item) => {
             updateUIFromHsv(false); 
         };
     }
-
+        
     resetBtn.onclick = (e) => { e.stopPropagation(); item.hex = item.originalHex; expandedHex = item.hex; currentHsv = ColorMath.hexToHsv(item.hex); updateUIFromHsv(); save(); };
     li.querySelector('.expand-btn').onclick = (e) => { e.stopPropagation(); expandedHex = (expandedHex === item.hex) ? null : item.hex; li.classList.toggle('expanded'); updateWindowHeight(); };
     li.querySelector('details').addEventListener('toggle', function() { 

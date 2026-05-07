@@ -18,6 +18,7 @@ let selectedItems = new Set();
 let expandedHex = null;
 let tweakOpen = false;
 let globalSettings = { tooltipsEnabled: true, maxItems: IS_PRO_BUILD ? 100 : 50 }; 
+let currentSort = 'time'; // Default
 
 window.wcagTarget = null;
 
@@ -347,56 +348,51 @@ const updateSelectionState = () => {
 // CHAPTER 5: LIST RENDERING ENGINE
 // ==========================================================
 const renderList = (history, type) => {
-    const clipHeader = document.querySelector('.clip-history-header'); 
-    const historyBox = document.querySelector('.clip-history-box'); 
-    
+    const list = document.getElementById('historyList'); // Ensure you have the reference
     if (!list) return;
-    list.innerHTML = '';
+
+    // THE MISSING FIX: This prevents the list from doubling/tripling
+    list.innerHTML = ''; 
     
-    updateSelectionState();
+    updateSelectionState(); 
 
-    if (clipHeader) {
-        clipHeader.style.display = 'flex'; 
-        clipHeader.style.alignItems = 'center';
+    let displayedHistory = []; 
+    const rawTerm = (searchInput && searchInput.value) ? searchInput.value.toLowerCase() : "";
+
+    // ==========================================================
+    // [LANDMARK] 1. DATA SORTING & TARGET JUMP
+    // ==========================================================
+    const sortedHistory = [...history].sort((a, b) => {
+        if (window.wcagTarget === a.hex) return -1;
+        if (window.wcagTarget === b.hex) return 1;
+
+        if (currentSort === 'hue') return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
+        if (currentSort === 'fav') return (b.pinned === a.pinned) ? 0 : b.pinned ? 1 : -1;
+        if (currentSort === 'lum') return ColorMath.getLuminance(b.hex) - ColorMath.getLuminance(a.hex);
         
-        // 1. Cleanup: Remove the old external badge if it's still stuck in the DOM
-        const oldBadge = clipHeader.querySelector('.history-count-badge');
-        if (oldBadge) oldBadge.remove();
+        return b.timestamp - a.timestamp;
+    });
 
-        // 2. Format the inner box to span the full width and hold both texts
-        if (historyBox) {
-            const maxLimit = globalSettings.maxItems || (IS_PRO_BUILD ? 100 : 50);
-            
-            // Turn the box into a flex row to push the items apart
-            historyBox.style.display = 'flex';
-            historyBox.style.justifyContent = 'space-between';
-            historyBox.style.alignItems = 'baseline'; 
-            
-            // THE FIX: Increased padding from 10px to 30px to clear the search button
-            historyBox.style.paddingRight = '40px';   
-            
-            // Inject the Title on the left, and the #/# ITEMS on the right
-            historyBox.innerHTML = `
-                <span>COLOR HISTORY</span>
-                <span style="font-family: system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 11px; opacity: 0.9; letter-spacing: 0.5px;">
-                    ITEMS: ${fullHistory.length}/${maxLimit} 
-                </span>
-            `;
-        }
-    }
+    // Now displayedHistory is defined, so this assignment won't crash
+    displayedHistory = sortedHistory.filter(item => {
+        return item.hex?.toLowerCase().includes(rawTerm) || 
+               item.label?.toLowerCase().includes(rawTerm);
+    });
 
-    if (!history.length) { 
+    if (!displayedHistory.length) { 
         list.innerHTML = `<div class="empty-wrap"><li class="empty-state">HISTORY CLEAR</li></div>`; 
         updateWindowHeight();
         return; 
     }
 
-    history.forEach((item, index) => {
+    // ==========================================================
+    // [LANDMARK] 2. DOM INJECTION LOOP
+    // ==========================================================
+    displayedHistory.forEach((item, index) => {
         const li = document.createElement('li');
         li.className = 'item';
         li.dataset.index = index;
-        
-        if (selectedItems.has(item.hex)) li.classList.add('selected-item');
+        if (window.wcagTarget === item.hex) li.classList.add('active-target-row');
         if (item.hex === expandedHex) {
             li.classList.add('expanded');
             li.classList.add('no-transition');
@@ -438,11 +434,28 @@ const renderList = (history, type) => {
                 <div class="header-left">
                     <div class="chk-wrap"><input type="checkbox" class="custom-chk row-chk" ${selectedItems.has(item.hex) ? 'checked' : ''}></div>
                     <div class="left-actions">
-                        ${IS_PRO_BUILD ? `<button class="action-btn expand-btn"><i class="fa-solid fa-chevron-down"></i></button>` : ''}
-                        <button class="action-btn star-btn ${item.pinned ? 'active' : ''}" title="${item.pinned ? 'Unfavorite' : 'Favorite'}"><i class="fa-${item.pinned ? 'solid' : 'regular'} fa-star"></i></button>
-                        ${IS_PRO_BUILD ? `<button class="action-btn target-btn" title="${window.wcagTarget === item.hex ? 'Clear Target' : 'Set as Contrast Target'}" style="font-size: 14px; ${window.wcagTarget === item.hex ? `color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; opacity: 1; filter: drop-shadow(0 0 4px ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : 'rgba(255, 255, 255, 0.2)'});` : ''}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width=".9em" height=".9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg>
+                        ${IS_PRO_BUILD ? `<button class="action-btn expand-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="6 9 12 17 18 9"></polyline></svg>
                         </button>` : ''}
+
+                        ${IS_PRO_BUILD ? `<button class="action-btn target-btn" title="${window.wcagTarget === item.hex ? 'Clear Target' : 'Set as Contrast Target'}" style="font-size: 12px; ${window.wcagTarget === item.hex ? `color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; opacity: 1; filter: drop-shadow(0 0 4px ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : 'rgba(255, 255, 255, 0.2)'});` : ''}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width=".9em" height=".9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="7"></circle>
+  <line x1="12" y1="0" x2="12" y2="4"></line>
+  <line x1="12" y1="20" x2="12" y2="24"></line>
+  <line x1="20" y1="12" x2="24" y2="12"></line>
+  <line x1="0" y1="12" x2="4" y2="12"></line>
+  <circle cx="12" cy="12" r="0.5" fill="currentColor"></circle>
+</svg>
+                        </button>` : ''}
+
+                        <button class="action-btn star-btn ${item.pinned ? 'active' : ''}" 
+        title="${item.pinned ? 'Unfavorite' : 'Favorite'}" 
+        style="${IS_PRO_BUILD ? 'margin-right: 8px; margin-left: -2px;' : 'margin-left: 6px; margin-right: 0px;'}">
+    <i class="fa-${item.pinned ? 'solid' : 'regular'} fa-star"; style="font-size: 0.65rem";></i>
+</button>
+                        
                     </div>
                 </div>
                 <div class="click-hint">Click Code to Copy</div>
@@ -636,14 +649,21 @@ const getProDetailsHTML = (item, rgb) => {
             </div>
             
             ${window.wcagTarget ? (window.wcagTarget === item.hex ? `
-            <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed var(--accent); padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center;">
-                <span style="display:flex; align-items:center; font-size: 0.65rem; color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; font-weight: bold; letter-spacing: 1px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" style="margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg> 
+            <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center; display: flex; width: 100%;">
+                <span style="display:flex; align-items:center; font-size: 0.65rem; color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; font-weight: bold; letter-spacing: 1px; white-space: nowrap;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" style="margin-right: 6px; margin-left: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="7"></circle>
+  <line x1="12" y1="0" x2="12" y2="4"></line>
+  <line x1="12" y1="20" x2="12" y2="24"></line>
+  <line x1="20" y1="12" x2="24" y2="12"></line>
+  <line x1="0" y1="12" x2="4" y2="12"></line>
+  <circle cx="12" cy="12" r="0.5" fill="currentColor"></circle>
+</svg> 
                     ACTIVE TARGET
                 </span>
             </div>
             ` : `
-            <div class="contrast-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
+           <div class="contrast-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
                 <span style="display:flex; align-items:center;">Target (${targetRatio}:1) <div style="width:8px;height:8px;background:${window.wcagTarget};margin-left:4px;border-radius:2px;border:1px solid rgba(255,255,255,0.2);"></div></span>
                 <span class="pro-text-standard" style="color:${targetPass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${targetPass}</span>
                 <div class="preview-box preview-target" style="background:${window.wcagTarget}; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center; border: 1px solid rgba(255,255,255,0.1);">Sample Text</div>
@@ -882,13 +902,23 @@ if (pickBtn) {
     pickBtn.ondragstart = (e) => e.preventDefault(); 
 } 
 
-if (sortBtn) {
-    sortBtn.onclick = () => {
-        // Clean toggle between TIME and HUE only
-        let nextSort = (globalSettings.sortMode === 'TIME') ? 'HUE' : 'TIME';
-        saveSetting('sortMode', nextSort, true);
+// ==========================================================
+// [LANDMARK] 4. SORT SUITE LISTENERS
+// ==========================================================
+document.querySelectorAll('.sort-icon-btn').forEach(btn => {
+    btn.onclick = () => {
+        // SC Visual Feedback
+        document.querySelectorAll('.sort-icon-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // State update
+        currentSort = btn.getAttribute('data-sort');
+        
+        // In your renderer, refresh() pulls data and re-renders
+        if (typeof refresh === 'function') refresh();
+        else renderList(fullHistory); 
     };
-}
+});
 
 window.hexStack.onPickedColor((hex) => { 
     capture(hex); 

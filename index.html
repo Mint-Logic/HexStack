@@ -147,9 +147,12 @@
 </div>
 
 <div class="footer">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <button id="sortBtn" style="background:none; border:none; color:var(--muted); font-size:0.6rem; cursor:pointer; min-width:auto; padding:0; letter-spacing: .5px; font-weight:bold; transition: color 0.2s ease;">SORT: TIME</button>
-        </div>
+        <div class="footer-sort-group" style="display: flex; align-items: center; gap: 4px;">
+    <button class="sort-icon-btn active" data-sort="time" title="Sort by Time"><i class="fa-solid fa-clock"></i></button>
+    <button class="sort-icon-btn" data-sort="hue" title="Sort by Hue"><i class="fa-solid fa-palette"></i></button>
+    <button class="sort-icon-btn" data-sort="fav" title="Sort by Favorites"><i class="fa-solid fa-star"></i></button>
+    <button class="sort-icon-btn" data-sort="lum" title="Sort by Lightness"><i class="fa-solid fa-sun"></i></button>
+</div>
         <div style="display:flex; gap:15px; align-items: center;">
             <button id="dlBtn" class="tool-btn">Export</button>
             <button id="clrBtn" class="tool-btn" title="Clear Non-Favorites">Clear All</button>
