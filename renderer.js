@@ -405,14 +405,16 @@ const renderList = (history, type) => {
         
         // --- NEW: TARGET BORDER GLOW ---
         if (window.wcagTarget === item.hex) {
-            li.style.setProperty('border-color', item.hex, 'important');
+            const isDark = ColorMath.getLuminance(item.hex) < 0.2;
+            const activeColor = isDark ? '#8CFA96' : item.hex;
+
+            li.style.setProperty('border-color', activeColor, 'important');
             
-            // PRESERVE MINT BORDER FOR FAVORITES
             if (item.pinned) {
                 li.style.setProperty('border-left-color', '#8CFA96', 'important');
             }
             
-            li.style.setProperty('box-shadow', `inset 0 0 0 1px ${item.hex}, 0 0 20px ${item.hex}40`, 'important');
+            li.style.setProperty('box-shadow', `inset 0 0 0 1px ${activeColor}, 0 0 20px ${isDark ? 'rgba(140, 250, 150, 0.15)' : item.hex + '40'}`, 'important');
         }
             
         const rgb = ColorMath.hexToRgb(item.hex);
@@ -438,10 +440,9 @@ const renderList = (history, type) => {
                     <div class="left-actions">
                         ${IS_PRO_BUILD ? `<button class="action-btn expand-btn"><i class="fa-solid fa-chevron-down"></i></button>` : ''}
                         <button class="action-btn star-btn ${item.pinned ? 'active' : ''}" title="${item.pinned ? 'Unfavorite' : 'Favorite'}"><i class="fa-${item.pinned ? 'solid' : 'regular'} fa-star"></i></button>
-                        ${IS_PRO_BUILD ? `<button class="action-btn target-btn" title="${window.wcagTarget === item.hex ? 'Clear Target' : 'Set as Contrast Target'}" style="font-size: 11px; ${window.wcagTarget === item.hex ? `color: ${item.hex}; opacity: 1; text-shadow: 0 0 8px ${item.hex}80;` : ''}"><svg xmlns="http://www.w3.org/2000/svg" width=".9em" height=".9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="10"></circle>
-  <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
-</svg></button>` : ''}
+                        ${IS_PRO_BUILD ? `<button class="action-btn target-btn" title="${window.wcagTarget === item.hex ? 'Clear Target' : 'Set as Contrast Target'}" style="font-size: 14px; ${window.wcagTarget === item.hex ? `color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; opacity: 1; filter: drop-shadow(0 0 4px ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : 'rgba(255, 255, 255, 0.2)'});` : ''}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg>
+                        </button>` : ''}
                     </div>
                 </div>
                 <div class="click-hint">Click Code to Copy</div>
@@ -636,7 +637,7 @@ const getProDetailsHTML = (item, rgb) => {
             
             ${window.wcagTarget ? (window.wcagTarget === item.hex ? `
             <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed var(--accent); padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center;">
-                <span style="display:flex; align-items:center; font-size: 0.65rem; ${window.wcagTarget === item.hex ? `color: ${item.hex}; font-weight: bold; letter-spacing: 1px;` : ''}">
+                <span style="display:flex; align-items:center; font-size: 0.65rem; color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; font-weight: bold; letter-spacing: 1px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" style="margin-right: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg> 
                     ACTIVE TARGET
                 </span>
@@ -648,7 +649,6 @@ const getProDetailsHTML = (item, rgb) => {
                 <div class="preview-box preview-target" style="background:${window.wcagTarget}; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center; border: 1px solid rgba(255,255,255,0.1);">Sample Text</div>
             </div>
             `) : ''}
-        </div>
         
         <div class="harmony-panel" style="margin-top:8px;">
     <div class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); margin-bottom:4px; text-transform:none; display:flex; align-items:center; gap:5px;">
