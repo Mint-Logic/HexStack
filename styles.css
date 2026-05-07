@@ -278,6 +278,17 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 }
 #injectBtn:hover { color: var(--mint); }
 
+#closeSearchPanelBtn {
+    opacity: 0.6 !important; /* Adjust your resting opacity here */
+    transition: all 0.2s ease;
+}
+
+#closeSearchPanelBtn:hover {
+    opacity: 1 !important;
+    /* Optional: Adds a slight red glow on hover to match the app's aesthetic */
+    text-shadow: 0 0 8px rgba(231, 76, 60, 0.6); 
+}
+
 /* --- LOGS --- */
 .log-header { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; margin-bottom: -5px; padding-top: 8px; border-top: 1px solid var(--brdr); }
 .log-left { display: flex; align-items: center; gap: 6px; }
