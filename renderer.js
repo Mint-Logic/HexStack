@@ -441,7 +441,7 @@ const renderList = (history, type) => {
                         ${IS_PRO_BUILD ? `<button class="action-btn expand-btn"><i class="fa-solid fa-chevron-down"></i></button>` : ''}
                         <button class="action-btn star-btn ${item.pinned ? 'active' : ''}" title="${item.pinned ? 'Unfavorite' : 'Favorite'}"><i class="fa-${item.pinned ? 'solid' : 'regular'} fa-star"></i></button>
                         ${IS_PRO_BUILD ? `<button class="action-btn target-btn" title="${window.wcagTarget === item.hex ? 'Clear Target' : 'Set as Contrast Target'}" style="font-size: 14px; ${window.wcagTarget === item.hex ? `color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; opacity: 1; filter: drop-shadow(0 0 4px ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : 'rgba(255, 255, 255, 0.2)'});` : ''}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width=".9em" height=".9em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle></svg>
                         </button>` : ''}
                     </div>
                 </div>
