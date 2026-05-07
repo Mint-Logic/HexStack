@@ -1084,6 +1084,14 @@ if (consoleBtn && settingsPanel) {
     };
 }
 
+// --- NEW CODE: Link the inner panel close button to the main toggle ---
+const closeSearchPanelBtn = document.getElementById('closeSearchPanelBtn');
+if (closeSearchPanelBtn && consoleBtn) {
+    closeSearchPanelBtn.onclick = () => {
+        consoleBtn.click(); // Reuses your existing perfect toggle logic
+    };
+}
+
 const closeHelpBtn = document.getElementById('closeHelpBtn');
 if (closeHelpBtn && helpModal) closeHelpBtn.onclick = () => { helpModal.style.display = 'none'; updateWindowHeight(); };
 
@@ -1204,9 +1212,16 @@ window.addEventListener('keydown', (e) => {
     }
     
     if (e.key === 'Escape') {
-        if (exportMenu?.style.display === 'flex') { exportMenu.style.display = 'none'; return; }
+        // If the search panel (settings-active) is open, close it
+        if (document.body.classList.contains('settings-active')) {
+            e.preventDefault();
+            // Trigger the same click logic as the button
+            if (consoleBtn) consoleBtn.click(); 
+            return;
+        }
+        
+        // Standard Escape behavior for modals
         if (helpModal?.style.display === 'flex') { closeHelpBtn.click(); return; }
-        if (currentIndex !== -1) { items[currentIndex].classList.remove('keyboard-focus'); return; }
         window.hexStack.close();
     }
 });
