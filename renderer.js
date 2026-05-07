@@ -353,6 +353,26 @@ const renderList = (history, type) => {
 
     // THE MISSING FIX: This prevents the list from doubling/tripling
     list.innerHTML = ''; 
+
+    const historyBox = document.querySelector('.clip-history-box'); 
+    if (historyBox) {
+        // Calculate limit based on Pro/Core state
+        const maxLimit = globalSettings.maxItems || (IS_PRO_BUILD ? 100 : 50);
+        
+        // Match SC Flex Layout to keep it aligned
+        historyBox.style.display = 'flex';
+        historyBox.style.justifyContent = 'space-between';
+        historyBox.style.alignItems = 'center'; 
+        historyBox.style.paddingRight = '40px'; // Space for search icon
+        
+        // Inject the count text
+        historyBox.innerHTML = `
+            <span>COLOR HISTORY</span>
+            <span style="font-family: 'Segoe UI', sans-serif; font-weight: 600; font-size: 10px; color: var(--accent); opacity: 0.9; letter-spacing: 1.5px;">
+                ITEMS: ${fullHistory.length}/${maxLimit} 
+            </span>
+        `;
+    }
     
     updateSelectionState(); 
 
@@ -369,7 +389,11 @@ const renderList = (history, type) => {
         if (currentSort === 'hue') return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
         if (currentSort === 'fav') return (b.pinned === a.pinned) ? 0 : b.pinned ? 1 : -1;
         if (currentSort === 'lum') return ColorMath.getLuminance(b.hex) - ColorMath.getLuminance(a.hex);
-        
+        if (currentSort === 'label') {
+            if (!a.label) return 1;  // Push unlabeled to bottom
+            if (!b.label) return -1;
+            return a.label.toLowerCase().localeCompare(b.label.toLowerCase());
+        }
         return b.timestamp - a.timestamp;
     });
 
