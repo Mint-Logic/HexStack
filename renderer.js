@@ -658,21 +658,27 @@ const getProDetailsHTML = (item, rgb) => {
         </div>
 
         <div class="contrast-panel" data-inverted="false">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <span class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); text-transform:uppercase;">Text Contrast</span>
-                <button class="action-btn swap-contrast-btn" title="Swap Foreground/Background" style="width:16px; height:16px; margin:0;"><i class="fa-solid fa-right-left"></i></button>
-            </div>
-            <div class="contrast-row">
-    <span>White (${access.white.ratio}:1) ...</span>
-    <span class="pro-text-standard" ...>${access.white.pass}</span>
-    <div class="preview-box preview-white" style="background:#FFF; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
-</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); text-transform:uppercase; display:flex; align-items:center; gap:5px;">
+            Text Contrast 
+            <button class="info-trigger click-only" data-nano="WCAG 2.1 Level AA requires a ratio of at least 4.5:1 for standard text.">i</button>
+        </span>
+        <button class="action-btn swap-contrast-btn" title="Swap Foreground/Background" style="width:16px; height:16px; margin:0;"><i class="fa-solid fa-right-left"></i></button>
+    </div>
 
-<div class="contrast-row">
-    <span>Black (${access.black.ratio}:1) ...</span>
-    <span class="pro-text-standard" ...>${access.black.pass}</span>
-    <div class="preview-box preview-black" style="background:#000; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
-</div>
+    <div class="contrast-row">
+        <span>White (${access.white.ratio}:1)</span>
+        <span class="pro-text-standard" style="color:${access.white.pass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${access.white.pass}</span>
+        <div class="preview-box preview-white" style="background:#FFF; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
+    </div>
+
+    <div class="contrast-row">
+        <span>Black (${access.black.ratio}:1)</span>
+        <span class="pro-text-standard" style="color:${access.black.pass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${access.black.pass}</span>
+        <div class="preview-box preview-black" style="background:#000; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
+    </div>
+    
+    </div>
             
             ${window.wcagTarget ? (window.wcagTarget === item.hex ? `
             <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center; display: flex; width: 100%;">
@@ -698,7 +704,7 @@ const getProDetailsHTML = (item, rgb) => {
             `) : ''}
         
         <div class="harmony-panel" style="margin-top:8px;">
-    <div class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); margin-bottom:4px; text-transform:none; display:flex; align-items:center; gap:5px;">
+    <div class="pro-text-standard" style="font-size:0.55rem; color:var(--accent); margin-bottom:4px; text-transform:uppercase; display:flex; align-items:center; gap:5px;">
         Triadic Matches <button class="info-trigger click-only" data-nano="3 colors evenly spaced (120°) on the color wheel. High contrast but balanced.">i</button>
         <span style="opacity:0.75; margin-left:auto; text-transform:none;">Click match to extract</span>
     </div>
@@ -1257,6 +1263,32 @@ window.addEventListener('keydown', (e) => {
         if (helpModal?.style.display === 'flex') { closeHelpBtn.click(); return; }
         window.hexStack.close();
     }
+
+    // --- 5. COLLAPSE ALL PANELS (Alt + C) ---
+if (e.altKey && (e.key === 'c' || e.key === 'C') && !isEditingText) {
+    e.preventDefault();
+    
+    // 1. Reset the expanded state variable
+    expandedHex = null;
+    tweakOpen = false;
+    
+    // 2. Remove 'expanded' class from all list items
+    document.querySelectorAll('.item.expanded').forEach(item => {
+        item.classList.remove('expanded');
+    });
+    
+    // 3. Close all <details> tweak panels
+    document.querySelectorAll('details.tweak-details').forEach(detail => {
+        detail.open = false;
+    });
+
+    // 4. Trigger height update to snap the window back to compact size
+    updateWindowHeight();
+    
+    // 5. Visual feedback
+    Utils.showSystemToast("ALL PANELS COLLAPSED", true);
+    return;
+}
 });
 
 // ==========================================================
