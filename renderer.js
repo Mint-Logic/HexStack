@@ -379,11 +379,11 @@ const renderList = (history, type) => {
     let displayedHistory = []; 
     const rawTerm = (searchInput && searchInput.value) ? searchInput.value.toLowerCase() : "";
 
-    // ==========================================================
-    // [LANDMARK] 1. DATA SORTING & TARGET JUMP
-    // ==========================================================
-    const sortedHistory = [...history].sort((a, b) => {
-        if (window.wcagTarget === a.hex) return -1;
+// ==========================================================
+// [LANDMARK] 1. DATA SORTING (Total Stability Mode)
+// ==========================================================
+const sortedHistory = [...history].sort((a, b) => {
+       
         if (window.wcagTarget === b.hex) return 1;
 
         if (currentSort === 'hue') return ColorMath.getHue(b.hex) - ColorMath.getHue(a.hex);
@@ -416,6 +416,7 @@ const renderList = (history, type) => {
         const li = document.createElement('li');
         li.className = 'item';
         li.dataset.index = index;
+        li.setAttribute('data-hex', item.hex);
         if (window.wcagTarget === item.hex) li.classList.add('active-target-row');
         if (item.hex === expandedHex) {
             li.classList.add('expanded');
@@ -662,15 +663,16 @@ const getProDetailsHTML = (item, rgb) => {
                 <button class="action-btn swap-contrast-btn" title="Swap Foreground/Background" style="width:16px; height:16px; margin:0;"><i class="fa-solid fa-right-left"></i></button>
             </div>
             <div class="contrast-row">
-                <span style="display:flex; align-items:center;">White (${access.white.ratio}:1) <button class="info-trigger click-only" data-nano="WCAG AA requires a minimum 4.5:1 contrast ratio for standard text readability.">i</button></span>
-                <span class="pro-text-standard" style="color:${access.white.pass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${access.white.pass}</span>
-                <div class="preview-box preview-white" style="background:${item.hex}; color:#FFF; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
-            </div>
-            <div class="contrast-row">
-                <span style="display:flex; align-items:center;">Black (${access.black.ratio}:1) <button class="info-trigger click-only" data-nano="WCAG AA requires a minimum 4.5:1 contrast ratio for standard text readability.">i</button></span>
-                <span class="pro-text-standard" style="color:${access.black.pass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${access.black.pass}</span>
-                <div class="preview-box preview-black" style="background:${item.hex}; color:#000; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
-            </div>
+    <span>White (${access.white.ratio}:1) ...</span>
+    <span class="pro-text-standard" ...>${access.white.pass}</span>
+    <div class="preview-box preview-white" style="background:#FFF; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
+</div>
+
+<div class="contrast-row">
+    <span>Black (${access.black.ratio}:1) ...</span>
+    <span class="pro-text-standard" ...>${access.black.pass}</span>
+    <div class="preview-box preview-black" style="background:#000; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;">Sample Text</div>
+</div>
             
             ${window.wcagTarget ? (window.wcagTarget === item.hex ? `
             <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center; display: flex; width: 100%;">
@@ -688,8 +690,9 @@ const getProDetailsHTML = (item, rgb) => {
             </div>
             ` : `
            <div class="contrast-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
-                <span style="display:flex; align-items:center;">Target (${targetRatio}:1) <div style="width:8px;height:8px;background:${window.wcagTarget};margin-left:4px;border-radius:2px;border:1px solid rgba(255,255,255,0.2);"></div></span>
+                <span style="display:flex; align-items:center;">Target (${targetRatio}:1) <div class="target-indicator" style="width:9px;height:9px;background:${window.wcagTarget}; margin-left:6px; margin-top:3px; border-radius:2px;border:1px solid rgba(255,255,255,0.2);"></div></span>
                 <span class="pro-text-standard" style="color:${targetPass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${targetPass}</span>
+                
                 <div class="preview-box preview-target" style="background:${window.wcagTarget}; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center; border: 1px solid rgba(255,255,255,0.1);">Sample Text</div>
             </div>
             `) : ''}
@@ -717,6 +720,36 @@ const attachProListeners = (li, item) => {
     const resetBtn = li.querySelector('.reset-btn');
     let currentHsv = ColorMath.hexToHsv(item.hex);
 
+// Locate the 8x8 square inside attachProListeners
+const indicator = li.querySelector('.target-indicator');
+if (indicator) {
+    indicator.style.cursor = 'pointer';
+    indicator.setAttribute('title', 'Click: Clear | Alt+Click: Jump to Target');
+
+    indicator.onclick = (e) => {
+        e.stopPropagation();
+        
+        if (e.altKey && window.wcagTarget) {
+            // THE TELEPORT
+            const targetEl = document.querySelector(`li[data-hex="${window.wcagTarget}"]`);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Add the professional "Pulse"
+                targetEl.classList.add('jump-highlight');
+                setTimeout(() => targetEl.classList.remove('jump-highlight'), 1200);
+                
+                UIManager.showTip(indicator, "Teleported to Target");
+            }
+        } else if (!e.altKey) {
+            // THE CLEAR
+            window.wcagTarget = null;
+            refresh(); 
+            UIManager.showTip(indicator, "Target Cleared");
+        }
+    };
+}
+
     const updateUIFromHsv = (updateText = true) => {
         slField.style.background = `hsl(${currentHsv.h}, 100%, 50%)`;
         li.querySelector('.picker-cursor').style.left = `${currentHsv.s}%`;
@@ -732,22 +765,22 @@ const attachProListeners = (li, item) => {
         const isInverted = contrastPanel && contrastPanel.dataset.inverted === 'true';
         
         const previewWhite = li.querySelector('.preview-white');
-        if (previewWhite) {
-            previewWhite.style.background = isInverted ? '#FFF' : newHex;
-            previewWhite.style.color = isInverted ? newHex : '#FFF';
-        }
-        
-        const previewBlack = li.querySelector('.preview-black');
-        if (previewBlack) {
-            previewBlack.style.background = isInverted ? '#000' : newHex;
-            previewBlack.style.color = isInverted ? newHex : '#000';
-        }
-        
-        const previewTarget = li.querySelector('.preview-target');
-        if (previewTarget && window.wcagTarget) {
-            previewTarget.style.background = isInverted ? window.wcagTarget : newHex;
-            previewTarget.style.color = isInverted ? newHex : window.wcagTarget;
-        }
+if (previewWhite) {
+    previewWhite.style.background = isInverted ? newHex : '#FFF'; // Swapped
+    previewWhite.style.color = isInverted ? '#FFF' : newHex;      // Swapped
+}
+
+const previewBlack = li.querySelector('.preview-black');
+if (previewBlack) {
+    previewBlack.style.background = isInverted ? newHex : '#000'; // Swapped
+    previewBlack.style.color = isInverted ? '#000' : newHex;      // Swapped
+}
+
+const previewTarget = li.querySelector('.preview-target');
+if (previewTarget && window.wcagTarget) {
+    previewTarget.style.background = isInverted ? newHex : window.wcagTarget; // Swapped
+    previewTarget.style.color = isInverted ? window.wcagTarget : newHex;      // Swapped
+}
     };
 
     const handleDrag = (e, type) => {
