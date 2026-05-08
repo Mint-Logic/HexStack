@@ -1077,25 +1077,6 @@ div[style*="border: 1px dashed #FF007F"] {
     100% { filter: drop-shadow(0 0 3px rgba(140, 250, 150, 0)); transform: scale(1); }
 }
 
-/* --- CUSTOM WINDOW RESIZE HANDLE --- */
-.resize-handle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 10px;  /* Shrunk from 18px */
-    height: 10px; /* Shrunk from 18px */
-    cursor: ew-resize; 
-    z-index: 99999;
-    -webkit-app-region: no-drag;
-    
-    background: linear-gradient(135deg, transparent 50%, rgba(187, 134, 252, 0.4) 50%);
-    transition: background 0.2s ease;
-}
-
-.resize-handle:hover {
-    background: linear-gradient(135deg, transparent 50%, var(--accent) 50%);
-}
-
 /* THE FIX: Temporarily kills all animations to prevent re-render blinking */
 .no-transition, .no-transition * {
     transition: none !important;
@@ -1174,3 +1155,4 @@ li.item.keyboard-focus .click-hint {
     animation: target-pulse 1.2s ease-out;
     border-color: #8CFA96 !important;
 }
+
