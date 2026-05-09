@@ -1044,10 +1044,16 @@ if (clrBtn) {
 if (getEl('confirmYes')) getEl('confirmYes').onclick = () => {
     const limit = globalSettings.maxItems || (IS_PRO_BUILD ? 100 : 50);
     const pinned = fullHistory.filter(c => c.pinned);
+    
     fullHistory = pinned.slice(0, limit); 
+    
+    // NEW: If we are clearing the list, clear the active target as well
+    window.wcagTarget = null;
+
     if (confirmModal) confirmModal.style.display = 'none';
-    save();
+    save(); // This triggers refresh() and clears the UI
 };
+
 if (getEl('confirmNo')) getEl('confirmNo').onclick = () => { if (confirmModal) confirmModal.style.display = 'none'; };
 
 if (flushLogBtn) flushLogBtn.onclick = () => { if (purgeModal) purgeModal.style.display = 'flex'; };
@@ -1071,15 +1077,23 @@ if (dlBtn && IS_PRO_BUILD && exportMenu) {
     let payloadStr = "";
 
     if (format === 'json') {
-        // 1. JSON FORMATTING (Dictionary)
-        const dict = {};
-        itemsToExport.forEach((color, index) => {
-            const keyName = color.label ? color.label.toLowerCase().trim().replace(/\s+/g, '-') : `color-${index + 1}`;
-            dict[keyName] = color.hex;
-        });
-        payloadStr = JSON.stringify(dict, null, 2); // Converts the object into a pretty-printed string
-
-    } else if (format === 'css') {
+    const dict = {};
+    itemsToExport.forEach((color, index) => {
+        // Create a unique, clean key: "Sky Blue" -> "sky-blue"
+        // If no label, use color-1, color-2, etc.
+        const baseName = color.label ? color.label.toLowerCase().trim().replace(/\s+/g, '-') : 'color';
+        let keyName = baseName;
+        
+        // Safety: If multiple colors have the same label, append the index
+        if (dict[keyName]) {
+            keyName = `${baseName}-${index + 1}`;
+        }
+        
+        dict[keyName] = color.hex;
+    });
+    payloadStr = JSON.stringify(dict, null, 2); 
+}
+ else if (format === 'css') {
         // 2. CSS FORMATTING (CSS Variables inside :root)
         payloadStr = ":root {\n";
         itemsToExport.forEach((color, index) => {
@@ -1264,30 +1278,21 @@ window.addEventListener('keydown', (e) => {
         window.hexStack.close();
     }
 
-    // --- 5. COLLAPSE ALL PANELS (Alt + C) ---
+// --- [PRO FEATURE] COLLAPSE ALL PANELS (Alt + C) ---
 if (e.altKey && (e.key === 'c' || e.key === 'C') && !isEditingText) {
     e.preventDefault();
     
-    // 1. Reset the expanded state variable
     expandedHex = null;
     tweakOpen = false;
     
-    // 2. Remove 'expanded' class from all list items
-    document.querySelectorAll('.item.expanded').forEach(item => {
-        item.classList.remove('expanded');
-    });
-    
-    // 3. Close all <details> tweak panels
-    document.querySelectorAll('details.tweak-details').forEach(detail => {
-        detail.open = false;
-    });
+    document.querySelectorAll('.item.expanded').forEach(item => item.classList.remove('expanded'));
+    document.querySelectorAll('details.tweak-details').forEach(detail => detail.open = false);
 
-    // 4. Trigger height update to snap the window back to compact size
     updateWindowHeight();
-    
-    // 5. Visual feedback
-    Utils.showSystemToast("ALL PANELS COLLAPSED", true);
-    return;
+
+    // FIXED: Anchor to the small History Header text instead of the body
+    const anchor = document.querySelector('.clip-history-box') || document.body;
+    UIManager.showTip(anchor, "All Workspaces Collapsed", true);
 }
 });
 
