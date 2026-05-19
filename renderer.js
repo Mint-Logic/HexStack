@@ -114,6 +114,8 @@ const undoBtn = getEl('undoBtn');
 const undoToast = getEl('undoToast');
 const confirmModal = getEl('confirmModal');
 const purgeModal = getEl('purgeModal');
+const purgeYes = getEl('purgeYes');     // The red button inside the modal
+const purgeNo = getEl('purgeNo');
 const spinUp = getEl('spinUp');
 const spinDown = getEl('spinDown');
 const uiScaleSelect = getEl('uiScaleSelect');
@@ -153,7 +155,7 @@ const updateWindowHeight = Utils.debounce((args = null) => {
     let targetW = (args instanceof Event) ? window.outerWidth : (typeof args === 'number') ? args : Math.ceil((isModalOpen ? 750 : 535) * scale);
 
     if (isModalOpen) {
-        if (window.hexStack && window.hexStack.resize) window.hexStack.resize(Math.ceil(550 * scale), 2, targetW); 
+        if (window.hexStack && window.hexStack.resize) window.hexStack.resize(Math.ceil(650 * scale), 2, targetW); 
         return;
     }
 
@@ -681,8 +683,9 @@ const getProDetailsHTML = (item, rgb) => {
     </div>
             
             ${window.wcagTarget ? (window.wcagTarget === item.hex ? `
-            <div class="contrast-row" style="background: rgba(0, 229, 255, 0.05); border: 1px dashed ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; padding: 4px; border-radius: 4px; margin-top: 6px; justify-content: center; display: flex; width: 100%;">
-                <span style="display:flex; align-items:center; font-size: 0.65rem; color: ${ColorMath.getLuminance(item.hex) < 0.2 ? '#8CFA96' : item.hex}; font-weight: bold; letter-spacing: 1px; white-space: nowrap;">
+            <div class="contrast-row" style="background:none; border: 1px dashed ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : item.hex}; padding: 4px; border-radius: 4px; justify-content: center; display: flex; width: calc(100% - 24px); 
+    margin: 0 auto;">
+                <span style="display:flex; align-items:center; font-size: 0.65rem; color: ${ColorMath.getLuminance(item.hex) < 0.2 ? 'rgba(140, 250, 150, 0.4)' : item.hex}; font-weight: bold; letter-spacing: 1px; white-space: nowrap;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" style="margin-right: 6px; margin-left: 6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="7"></circle>
   <line x1="12" y1="0" x2="12" y2="4"></line>
@@ -695,11 +698,11 @@ const getProDetailsHTML = (item, rgb) => {
                 </span>
             </div>
             ` : `
-           <div class="contrast-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);">
-                <span style="display:flex; align-items:center;">Target (${targetRatio}:1) <div class="target-indicator" style="width:9px;height:9px;background:${window.wcagTarget}; margin-left:6px; margin-top:3px; border-radius:2px;border:1px solid rgba(255,255,255,0.2);"></div></span>
+           <div class="contrast-row" style="margin-top: 6px; padding-top: 6px; padding-left: 12px; padding-right: 12px;border-top: 1px dashed rgba(255,255,255,0.1);">
+                <span style="display:flex; align-items:center;">Target (${targetRatio}:1) <div class="target-indicator" style="width:9px;height:9px;background:${window.wcagTarget}; margin-left:6px; margin-top:3px; border-radius:2px; border:1px solid rgba(255,255,255,0.2);"></div></span>
                 <span class="pro-text-standard" style="color:${targetPass === 'PASS' ? 'var(--mint)' : '#e74c3c'}">${targetPass}</span>
                 
-                <div class="preview-box preview-target" style="background:${window.wcagTarget}; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center; border: 1px solid rgba(255,255,255,0.1);">Sample Text</div>
+                <div class="preview-box preview-target" style="background:${window.wcagTarget}; color:${item.hex}; padding:2px 6px; border-radius:2px; font-size:0.6rem; font-weight:500; text-align:center;;">Sample Text</div>
             </div>
             `) : ''}
         
@@ -708,7 +711,7 @@ const getProDetailsHTML = (item, rgb) => {
         Triadic Matches <button class="info-trigger click-only" data-nano="3 colors evenly spaced (120°) on the color wheel. High contrast but balanced.">i</button>
         <span style="opacity:0.75; margin-left:auto; text-transform:none;">Click match to extract</span>
     </div>
-    <div style="display:flex; width: calc(100% - 20px); margin: 0 10px; gap:6px;">
+    <div style="display:flex; width: 100%; gap:6px;">
         <div class="harmony-chip" style="background:${triad[0]};" data-hex="${triad[0]}"></div>
         <div class="harmony-chip" style="background:${triad[1]};" data-hex="${triad[1]}"></div>
     </div>
@@ -1032,33 +1035,83 @@ if (undoBtn) undoBtn.onclick = () => { if(lastDeleted) { fullHistory.unshift(las
 if (clrBtn) {
     clrBtn.onclick = (e) => {
         e.stopPropagation();
+        // If checkboxes are active, delete selection immediately
         if (selectedItems.size > 0) {
             fullHistory = fullHistory.filter(item => !selectedItems.has(item.hex) || item.pinned);
-            selectedItems.clear(); save();
+            selectedItems.clear(); 
+            save(); 
         } else {
+            // Otherwise, trigger the verification modal
             if (confirmModal) confirmModal.style.display = 'flex';
         }
     };
 }
 
-if (getEl('confirmYes')) getEl('confirmYes').onclick = () => {
-    const limit = globalSettings.maxItems || (IS_PRO_BUILD ? 100 : 50);
-    const pinned = fullHistory.filter(c => c.pinned);
-    
-    fullHistory = pinned.slice(0, limit); 
-    
-    // NEW: If we are clearing the list, clear the active target as well
-    window.wcagTarget = null;
+if (getEl('confirmYes')) {
+    getEl('confirmYes').onclick = () => {
+        const limit = globalSettings.maxItems || (IS_PRO_BUILD ? 100 : 50);
+        
+        // Older Logic: Protect pinned items, clear the rest
+        const pinned = fullHistory.filter(c => c.pinned);
+        fullHistory = pinned.slice(0, limit); 
+        
+        window.wcagTarget = null; // Purge active accessibility targets
 
-    if (confirmModal) confirmModal.style.display = 'none';
-    save(); // This triggers refresh() and clears the UI
-};
+        if (confirmModal) confirmModal.style.display = 'none';
+        save();
+        Utils.showSystemToast("Workspace cleared.", true);
+    };
+}
 
-if (getEl('confirmNo')) getEl('confirmNo').onclick = () => { if (confirmModal) confirmModal.style.display = 'none'; };
+// Workspace Cancel
+if (getEl('confirmNo')) {
+    getEl('confirmNo').onclick = () => {
+        if (confirmModal) confirmModal.style.display = 'none';
+    };
+}
 
-if (flushLogBtn) flushLogBtn.onclick = () => { if (purgeModal) purgeModal.style.display = 'flex'; };
-if (getEl('purgeYes')) getEl('purgeYes').onclick = () => { saveSetting('logs', [], false); systemLogs = []; renderLogs(); if (purgeModal) purgeModal.style.display = 'none'; };
-if (getEl('purgeNo')) getEl('purgeNo').onclick = () => { if (purgeModal) purgeModal.style.display = 'none'; };
+// Purge Cancel
+if (getEl('purgeNo')) {
+    getEl('purgeNo').onclick = () => {
+        if (purgeModal) purgeModal.style.display = 'none';
+    };
+}
+
+// --- PURGE SYSTEM LOGS LOGIC ---
+
+// 1. Open the Modal
+if (flushLogBtn) {
+    flushLogBtn.onclick = (e) => {
+        e.stopPropagation();
+        // Updated ID: Opens the red purge modal
+        if (purgeModal) purgeModal.style.display = 'flex';
+    };
+}
+
+// 2. The "Yes" Action (Purge)
+const purgeYesBtn = document.getElementById('purgeYes');
+if (getEl('purgeYes')) {
+    getEl('purgeYes').onclick = () => {
+        // Updated ID names to match your latest HTML
+        systemLogs = []; 
+        saveSetting('logs', [], false); 
+        renderLogs(); 
+        
+        if (purgeModal) purgeModal.style.display = 'none';
+        if (logContainer) logContainer.style.display = 'none'; 
+        
+        Utils.showSystemToast("System logs purged.", true);
+        updateWindowHeight(); 
+    };
+}
+
+// 3. The "No" Action (Cancel)
+const purgeNoBtn = document.getElementById('purgeNo');
+if (purgeNoBtn) {
+    purgeNoBtn.onclick = () => {
+        if (purgeModal) purgeModal.style.display = 'none';
+    };
+}
 
 const exportMenu = document.getElementById('exportMenu');
 if (dlBtn && IS_PRO_BUILD && exportMenu) {
@@ -1115,7 +1168,9 @@ if (dlBtn && IS_PRO_BUILD && exportMenu) {
 };
     });
     
-    document.addEventListener('click', () => { if (exportMenu) exportMenu.style.display = 'none'; });
+    document.addEventListener('click', () => { 
+        if (exportMenu) exportMenu.style.display = 'none'; 
+    });
 }
 
 if (toggleLogBtn && IS_PRO_BUILD && logContainer) toggleLogBtn.onclick = () => { logContainer.style.display = logContainer.style.display === 'block' ? 'none' : 'block'; updateWindowHeight(); };

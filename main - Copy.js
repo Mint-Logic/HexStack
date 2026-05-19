@@ -380,22 +380,16 @@ if (!gotTheLock) {
 
     // --- ADD THE MISSING TOGGLE FUNCTION ---
     function toggleWindow() {
-    if (mainWindow) {
-        if (mainWindow.isVisible()) {
-            mainWindow.hide();
-        } else {
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.show();
-            
-            // THE CRITICAL FIX: Re-assert dominance every time it shows
-            const topState = db.get('alwaysOnTop');
-            mainWindow.setAlwaysOnTop(topState, 'pop-up-menu');
-            if (topState) mainWindow.moveTop();
-            
-            mainWindow.focus();
+        if (mainWindow) {
+            if (mainWindow.isVisible()) {
+                mainWindow.hide();
+            } else {
+                if (mainWindow.isMinimized()) mainWindow.restore();
+                mainWindow.show();
+                mainWindow.focus();
+            }
         }
     }
-}
 
     app.whenReady().then(async () => {
         // Force the app to wait for the hardware check before building the UI
@@ -692,9 +686,8 @@ ipcMain.on('nuke-license', () => {
    // --- [FIX 1] BULLETPROOF ALWAYS-ON-TOP ---
     ipcMain.on('set-always-on-top', (event, state) => {
     isAlwaysOnTop = state;
-    db.set('alwaysOnTop', state); // Ensure it's saved to the DB
-    if (mainWindow && !mainWindow.isDestroyed()) { 
-        // Use 'pop-up-menu' level to stay above the taskbar if needed
+    // THE FIX: Only assert "Top" if the window is actually visible
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) { 
         mainWindow.setAlwaysOnTop(state, 'pop-up-menu');
         if (state) mainWindow.moveTop();
     }
