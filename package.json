@@ -17,7 +17,7 @@
     "design"
   ],
   "author": "Mint Logic",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE FILE",
   "build": {
     "appId": "com.mintlogic.hexstack",
     "productName": "HexStack",
