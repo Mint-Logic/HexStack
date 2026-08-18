@@ -161,7 +161,7 @@ if (!gotTheLock) {
             thickFrame: false, 
             maximizable: false,
             fullscreenable: false,
-            skipTaskbar: false, 
+            skipTaskbar: true, 
             icon: getAppIcon(), 
             webPreferences: {
                 nodeIntegration: false,
@@ -207,15 +207,15 @@ if (!gotTheLock) {
         mainWindow.webContents.once('did-finish-load', () => {
     mainWindow.webContents.send('init-status', IS_PRO_BUILD);
     
-    // THE FIX: Check for the silent startup flag
     const isStartupLaunch = process.argv.includes('--hidden');
     
     if (!isStartupLaunch) {
+        mainWindow.setSkipTaskbar(false); // Reveal in Taskbar only when shown
         mainWindow.show();
         mainWindow.focus();
     } else {
         console.log("[STARTUP] HexStack started silently to tray.");
-        // Ensure tray exists if starting hidden
+        mainWindow.setSkipTaskbar(true); // Ensure Taskbar is completely skipped on boot
         if (!tray) createTray(); 
     }
 });
@@ -382,12 +382,13 @@ if (!gotTheLock) {
     function toggleWindow() {
     if (mainWindow) {
         if (mainWindow.isVisible()) {
+            mainWindow.setSkipTaskbar(true); // Remove from Taskbar when hidden
             mainWindow.hide();
         } else {
             if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.setSkipTaskbar(false); // Show on Taskbar when visible
             mainWindow.show();
             
-            // THE CRITICAL FIX: Re-assert dominance every time it shows
             const topState = db.get('alwaysOnTop');
             mainWindow.setAlwaysOnTop(topState, 'pop-up-menu');
             if (topState) mainWindow.moveTop();
