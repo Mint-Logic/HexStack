@@ -147,7 +147,7 @@ if (!IS_PRO_BUILD) {
 // ==========================================================
 // CHAPTER 3: WINDOW SIZING (PIXEL CALIBRATION)
 // ==========================================================
-const updateWindowHeight = Utils.debounce((args = null) => {
+const calculateAndResizeWindow = (args = null) => {
     const isModalOpen = helpModal && helpModal.style.display === 'flex';
     const isSettingsOpen = document.body.classList.contains('settings-active');
     const scale = globalSettings.uiScale || 1;
@@ -190,19 +190,13 @@ const updateWindowHeight = Utils.debounce((args = null) => {
 
     if (window.hexStack && window.hexStack.resize) window.hexStack.resize(finalHeight, isSettingsOpen ? 1 : 0, targetW);
     if (content) content.style.overflowY = finalHeight >= maxHeight ? 'auto' : 'hidden';
-}, 50);
+};
 
-window.addEventListener('resize', (e) => {
-    // requestAnimationFrame ensures we wait for the browser to finish its internal layout 
-    // before we try to measure the DOM. Double rAF guarantees the paint is complete.
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            // Reset scroll to prevent DevTools from shoving the body up
-            document.documentElement.scrollTop = 0;
-            document.body.scrollTop = 0;
-            updateWindowHeight(e);
-        });
-    });
+const updateWindowHeight = Utils.debounce(calculateAndResizeWindow, 50);
+
+window.addEventListener('resize', () => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
 });
 
 // ==========================================================
@@ -1179,17 +1173,20 @@ if (settingsBtn && helpModal) settingsBtn.onclick = () => { helpModal.style.disp
 const consoleBtn = document.getElementById('consoleBtn');
 if (consoleBtn && settingsPanel) {
     consoleBtn.onclick = () => {
-        const isHidden = settingsPanel.style.display === 'none' || settingsPanel.style.display === '';
-        settingsPanel.style.display = isHidden ? 'block' : 'none';
-        consoleBtn.style.color = isHidden ? 'var(--accent)' : 'var(--muted)';
-        if (isHidden) {
-            document.body.classList.add('settings-active');
-            setTimeout(() => { if (searchInput) searchInput.focus(); }, 50);
-        } else {
-            document.body.classList.remove('settings-active');
-        }
-        updateWindowHeight();
-    };
+    const isHidden = settingsPanel.style.display === 'none' || settingsPanel.style.display === '';
+    settingsPanel.style.display = isHidden ? 'block' : 'none';
+    consoleBtn.style.color = isHidden ? 'var(--accent)' : 'var(--muted)';
+    
+    if (isHidden) {
+        document.body.classList.add('settings-active');
+        setTimeout(() => { if (searchInput) searchInput.focus(); }, 50);
+    } else {
+        document.body.classList.remove('settings-active');
+    }
+    
+    // Force immediate height calculation
+    updateWindowHeight.flush ? updateWindowHeight.flush() : updateWindowHeight();
+};
 }
 
 // --- NEW CODE: Link the inner panel close button to the main toggle ---

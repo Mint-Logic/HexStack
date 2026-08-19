@@ -89,7 +89,7 @@ button, input, select, .item, .color-preview, .shade-popup,
     margin-bottom: 0px !important;
     -webkit-app-region: drag;
     user-select: none; 
-    transition: all 0.3s ease; 
+   
     overflow: hidden;
     isolation: isolate;
     background: /* The "Brush" Layer: subtle horizontal lines */

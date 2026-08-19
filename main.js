@@ -29,7 +29,7 @@ let REAL_PRO_STATUS = false; // Added to match the Dev Toggle logic
 
 async function initializeLicense() {
     try {
-        const licenseStatus = await licenseMgr.loadLicense('HexStack'); // <-- CHANGED
+        const licenseStatus = await licenseMgr.loadLicense('HexStack');
         if (licenseStatus && licenseStatus.valid) {
             IS_PRO_BUILD = true;
             REAL_PRO_STATUS = true;
@@ -39,7 +39,6 @@ async function initializeLicense() {
         console.error("[LICENSE] Startup Error:", e);
     }
 }
-
 
 if (process.platform === 'win32') {
     app.setAppUserModelId(app.isPackaged ? 'com.hexstack.app' : process.execPath);
@@ -73,8 +72,8 @@ if (!gotTheLock) {
         logs: [],
         maxItems: 100,
         codeType: 'HEX',
-        alwaysOnTop: true,           // THE FIX: Changed to true
-        notificationsEnabled: false, // THE FIX: Changed to false
+        alwaysOnTop: true,
+        notificationsEnabled: false,
         compactMode: false,
         sortMode: 'TIME',
         isPaused: false
@@ -152,7 +151,6 @@ if (!gotTheLock) {
             width: 535,
             height: Math.max(190, height || 190),
             minWidth: 535,
-           
             minHeight: 190, 
             frame: false,
             transparent: true,
@@ -181,15 +179,13 @@ if (!gotTheLock) {
         });
 
         mainWindow.webContents.on('devtools-closed', () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-        // Industry trick: Toggling opacity by 1% forces Chromium to dump the 
-        // compositor cache and resync with the Windows DWM surface.
-        mainWindow.setOpacity(0.99);
-        setTimeout(() => {
-            mainWindow.setOpacity(1.0);
-        }, 50);
-    }
-});
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.setOpacity(0.99);
+                setTimeout(() => {
+                    mainWindow.setOpacity(1.0);
+                }, 50);
+            }
+        });
 
         mainWindow.webContents.setWindowOpenHandler(({ url }) => {
             if (isSafeUrl(url)) {
@@ -204,19 +200,20 @@ if (!gotTheLock) {
             console.warn('Navigation blocked to:', navigationUrl);
         });
 
-        mainWindow.webContents.once('did-finish-load', () => {
+       mainWindow.webContents.once('did-finish-load', () => {
     mainWindow.webContents.send('init-status', IS_PRO_BUILD);
     
-    const isStartupLaunch = process.argv.includes('--hidden');
+    // Check if Windows launched the app with the --hidden flag
+    const isStartupLaunch = process.argv.some(arg => arg.includes('--hidden'));
     
-    if (!isStartupLaunch) {
-        mainWindow.setSkipTaskbar(false); // Reveal in Taskbar only when shown
+    if (isStartupLaunch) {
+        console.log("[STARTUP] HexStack started silently to tray.");
+        mainWindow.hide();               // 1. Force window to stay hidden (no overlay!)
+        mainWindow.setSkipTaskbar(true); // 2. Hide from Windows taskbar
+    } else {
+        mainWindow.setSkipTaskbar(false);
         mainWindow.show();
         mainWindow.focus();
-    } else {
-        console.log("[STARTUP] HexStack started silently to tray.");
-        mainWindow.setSkipTaskbar(true); // Ensure Taskbar is completely skipped on boot
-        if (!tray) createTray(); 
     }
 });
 
@@ -269,7 +266,6 @@ if (!gotTheLock) {
     function createPickerWindow() {
     if (pickerWindow && !pickerWindow.isDestroyed()) return;
 
-    // [FIX] Calculate the total bounds of all monitors combined
     const displays = screen.getAllDisplays();
     const totalBounds = displays.reduce((acc, display) => {
         return {
@@ -281,7 +277,6 @@ if (!gotTheLock) {
     }, { x: 0, y: 0, width: 0, height: 0 });
 
     pickerWindow = new BrowserWindow({
-        // [FIX] Apply the total virtual desktop bounds
         x: totalBounds.x,
         y: totalBounds.y,
         width: totalBounds.width,
@@ -291,26 +286,27 @@ if (!gotTheLock) {
         transparent: true,
         backgroundColor: '#00000000',
         alwaysOnTop: true, 
-        enableLargerThanScreen: true, // Crucial for spanning
+        enableLargerThanScreen: true,
         skipTaskbar: true, 
         resizable: false, 
         thickFrame: false, 
         movable: false,
         hasShadow: false, 
-        focusable: true,
+        focusable: false, // <--- Set to false until activated
         webPreferences: { 
             nodeIntegration: false, 
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
     pickerWindow.loadFile('picker.html');
     pickerWindow.setOpacity(0);
-    pickerWindow.setIgnoreMouseEvents(true);
-    // SECURE: Ensure the invisible picker window cannot be navigated away
-        pickerWindow.webContents.on('will-navigate', (event) => {
-            event.preventDefault();
-        });
+    pickerWindow.setIgnoreMouseEvents(true, { forward: true }); // <--- Ensure mouse events pass through
+
+    pickerWindow.webContents.on('will-navigate', (event) => {
+        event.preventDefault();
+    });
 }
 
     let pickerActive = false;
@@ -318,17 +314,15 @@ if (!gotTheLock) {
     function activatePicker() {
         if (!pickerWindow || pickerWindow.isDestroyed()) createPickerWindow();
 
-        // 1. Instantly show the transparent window so it's ready to receive data
         pickerWindow.setOpacity(0);
+        pickerWindow.setIgnoreMouseEvents(false); // Re-enable clicks for picking
         pickerWindow.show();
-        pickerWindow.setAlwaysOnTop(true, 'screen-saver'); // Maximum priority
+        pickerWindow.setAlwaysOnTop(true, 'screen-saver');
 
-        // 2. Wrap the capture in a delay to let hover states un-click
         setTimeout(async () => {
             const cursorPoint = screen.getCursorScreenPoint();
             const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
 
-            // 3. Size the window to cover the active display perfectly
             pickerWindow.setBounds({
                 x: currentDisplay.bounds.x,
                 y: currentDisplay.bounds.y,
@@ -339,28 +333,22 @@ if (!gotTheLock) {
             const localX = cursorPoint.x - currentDisplay.bounds.x;
             const localY = cursorPoint.y - currentDisplay.bounds.y;
             
-            // 4. Tell the picker to clear its old data
             pickerWindow.webContents.send('reset-picker', { 
                 x: localX, 
                 y: localY, 
                 isPro: IS_PRO_BUILD 
             });
 
-            // 5. Calculate the exact pixel size needed for a crisp screenshot
             const thumbSize = {
                 width: Math.ceil(currentDisplay.size.width * currentDisplay.scaleFactor),
                 height: Math.ceil(currentDisplay.size.height * currentDisplay.scaleFactor)
             };
 
             try {
-                // 6. Grab the screens
                 const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: thumbSize });
-                
-                // Dynamically match the screen source to the display the user is currently on
                 const source = sources.find(s => s.display_id === currentDisplay.id.toString()) || sources[0];
                 
                 if (source) {
-                    // 7. Send the image to the picker
                     pickerWindow.webContents.send('screen-capture', {
                         dataUrl: source.thumbnail.toDataURL(),
                         width: currentDisplay.bounds.width,
@@ -378,45 +366,39 @@ if (!gotTheLock) {
         }, 150); 
     }
 
-    // --- ADD THE MISSING TOGGLE FUNCTION ---
     function toggleWindow() {
-    if (mainWindow) {
-        if (mainWindow.isVisible()) {
-            mainWindow.setSkipTaskbar(true); // Remove from Taskbar when hidden
-            mainWindow.hide();
-        } else {
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.setSkipTaskbar(false); // Show on Taskbar when visible
-            mainWindow.show();
-            
-            const topState = db.get('alwaysOnTop');
-            mainWindow.setAlwaysOnTop(topState, 'pop-up-menu');
-            if (topState) mainWindow.moveTop();
-            
-            mainWindow.focus();
+        if (mainWindow) {
+            if (mainWindow.isVisible()) {
+                mainWindow.setSkipTaskbar(true);
+                mainWindow.hide();
+            } else {
+                if (mainWindow.isMinimized()) mainWindow.restore();
+                mainWindow.setSkipTaskbar(false);
+                mainWindow.show();
+                
+                const topState = db.get('alwaysOnTop');
+                mainWindow.setAlwaysOnTop(topState, 'pop-up-menu');
+                if (topState) mainWindow.moveTop();
+                
+                mainWindow.focus();
+            }
         }
     }
-}
 
     app.whenReady().then(async () => {
-        // Force the app to wait for the hardware check before building the UI
-        await initializeLicense(); 
+    await initializeLicense(); 
 
-        createWindow();
-        createTray();
-        setTimeout(createPickerWindow, 500);
+    createTray();   // Always create the system tray icon first on boot!
+    createWindow(); // Create the main window in hidden state
 
-        // --- MAIN WINDOW HOTKEY ---
-        // Change 'Space' to 'H' or 'C' if you run SmartClip at the same time!
-        globalShortcut.register('CommandOrControl+Shift+Space', () => {
-            toggleWindow();
-        });
-
-        // --- COLOR PICKER HOTKEY (P FOR PICK) ---
-globalShortcut.register('CommandOrControl+Alt+P', () => {
-    activatePicker();
-});
+    globalShortcut.register('CommandOrControl+Shift+Space', () => {
+        toggleWindow();
     });
+
+    globalShortcut.register('CommandOrControl+Alt+P', () => {
+        activatePicker();
+    });
+});
 
     app.on('will-quit', () => { globalShortcut.unregisterAll(); });
 
@@ -425,18 +407,13 @@ globalShortcut.register('CommandOrControl+Alt+P', () => {
     });
     
     ipcMain.on('open-external', (event, url) => {
-    // Basic safety check for protocol
-    if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
-        shell.openExternal(url);
-    }
-});
+        if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
+            shell.openExternal(url);
+        }
+    });
     
-    // --- FEATURE FLAG HANDLER ---
     ipcMain.on('dev-mode-toggle', (event, shouldBeCore) => {
-        // If simulating core, force false. Otherwise, restore the true anchored status.
         IS_PRO_BUILD = shouldBeCore ? false : REAL_PRO_STATUS;
-        
-        // Pull the trigger
         if (mainWindow) mainWindow.reload();
     });
 
@@ -444,143 +421,128 @@ globalShortcut.register('CommandOrControl+Alt+P', () => {
         event.returnValue = IS_PRO_BUILD; 
     });
 
-// --- ADD DEV SYNC HERE ---
-ipcMain.on('get-is-dev-sync', (event) => { 
-    event.returnValue = !app.isPackaged; 
-});
+    ipcMain.on('get-is-dev-sync', (event) => { 
+        event.returnValue = !app.isPackaged; 
+    });
 
-// --- UPDATED LICENSE VALIDATOR ---
-ipcMain.on('validate-license', async (event, payload) => {
-    console.log(`[DEBUG-MAIN] HexStack Passkey drop received!`);
-    try {
-        let rawData;
-        if (typeof payload === 'string') {
-            if (payload.trim().startsWith('{')) {
-                rawData = JSON.parse(payload);
-            } else {
-                const fileContent = fs.readFileSync(payload, 'utf-8');
-                rawData = JSON.parse(fileContent);
-            }
-        } else {
-            rawData = payload;
-        }
-
-        if (rawData.app !== 'HexStack') {
-            return event.reply('license-response', { 
-                success: false, 
-                reason: `This key is for ${rawData.app || 'another app'}, not HexStack.` 
-            });
-        }
-
-        let hwId;
+    ipcMain.on('validate-license', async (event, payload) => {
+        console.log(`[DEBUG-MAIN] HexStack Passkey drop received!`);
         try {
-            const { machineIdSync } = require('node-machine-id');
-            hwId = machineIdSync();
-        } catch (e) {
-            const crypto = require('crypto');
-            const os = require('os');
-            hwId = crypto.createHash('sha256').update(os.hostname() + os.userInfo().username).digest('hex');
-        }
-        
-        const UPSTASH_CHECK_URL = "https://mint-logic-site.vercel.app/api/check-activation";
-        const cloudResponse = await fetch(UPSTASH_CHECK_URL, {
-            method: 'POST',
-            body: JSON.stringify({ order_id: rawData.order_id, hw_id: hwId, app: 'HexStack' }),
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        const cloudResult = await cloudResponse.json();
-
-        if (!cloudResult.authorized) {
-            if (!app.isPackaged) {
-                console.log("🛠️ DEV MODE: Bypassing Upstash limit for local testing.");
+            let rawData;
+            if (typeof payload === 'string') {
+                if (payload.trim().startsWith('{')) {
+                    rawData = JSON.parse(payload);
+                } else {
+                    const fileContent = fs.readFileSync(payload, 'utf-8');
+                    rawData = JSON.parse(fileContent);
+                }
             } else {
+                rawData = payload;
+            }
+
+            if (rawData.app !== 'HexStack') {
                 return event.reply('license-response', { 
                     success: false, 
-                    reason: cloudResult.reason || "Activation limit reached (3 max)." 
+                    reason: `This key is for ${rawData.app || 'another app'}, not HexStack.` 
                 });
             }
+
+            let hwId;
+            try {
+                const { machineIdSync } = require('node-machine-id');
+                hwId = machineIdSync();
+            } catch (e) {
+                const crypto = require('crypto');
+                const os = require('os');
+                hwId = crypto.createHash('sha256').update(os.hostname() + os.userInfo().username).digest('hex');
+            }
+            
+            const UPSTASH_CHECK_URL = "https://mint-logic-site.vercel.app/api/check-activation";
+            const cloudResponse = await fetch(UPSTASH_CHECK_URL, {
+                method: 'POST',
+                body: JSON.stringify({ order_id: rawData.order_id, hw_id: hwId, app: 'HexStack' }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const cloudResult = await cloudResponse.json();
+
+            if (!cloudResult.authorized) {
+                if (!app.isPackaged) {
+                    console.log("🛠️ DEV MODE: Bypassing Upstash limit for local testing.");
+                } else {
+                    return event.reply('license-response', { 
+                        success: false, 
+                        reason: cloudResult.reason || "Activation limit reached (3 max)." 
+                    });
+                }
+            }
+
+            const payloadToSave = { 
+                app: 'HexStack', 
+                owner: rawData.owner, 
+                order_id: rawData.order_id, 
+                hw_id: hwId,
+                unlocked: true 
+            };
+            
+            const saved = licenseMgr.saveLicense(payloadToSave, 'HexStack');
+            
+            if (saved) {
+                IS_PRO_BUILD = true;
+                REAL_PRO_STATUS = true; 
+                event.reply('license-response', { success: true, owner: rawData.owner });
+                setTimeout(() => { if (mainWindow) mainWindow.reload(); }, 1500);
+            } else {
+                event.reply('license-response', { success: false, reason: "Local Windows OS Encryption failed." });
+            }
+
+        } catch (err) {
+            console.error("[DEBUG-MAIN] Activation Error:", err);
+            event.reply('license-response', { success: false, reason: "Invalid file format or connection error." });
         }
+    });
 
-        // 1. We construct the payload, but this time we inject the REAL hwId 
-        // that was generated at the top of this function!
-        const payloadToSave = { 
-            app: 'HexStack', 
-            owner: rawData.owner, 
-            order_id: rawData.order_id, 
-            hw_id: hwId, // <-- THE MISSING HARDWARE SEAL
-            unlocked: true 
-        };
-        
-        // 2. LicenseManager will automatically detect the real hw_id, 
-        // recalculate the signature locally, and encrypt it to the disk.
-        const saved = licenseMgr.saveLicense(payloadToSave, 'HexStack');
-        
-        if (saved) {
-            IS_PRO_BUILD = true;
-            REAL_PRO_STATUS = true; 
-            event.reply('license-response', { success: true, owner: rawData.owner });
-            setTimeout(() => { if (mainWindow) mainWindow.reload(); }, 1500);
-        } else {
-            event.reply('license-response', { success: false, reason: "Local Windows OS Encryption failed." });
+    ipcMain.on('validate-license-string', async (event, rawJson) => {
+        try {
+            const tempPath = path.join(app.getPath('temp'), 'manual_license.mint');
+            fs.writeFileSync(tempPath, rawJson);
+            ipcMain.emit('validate-license', event, tempPath);
+        } catch (e) {
+            event.reply('license-response', { success: false, reason: "Manual entry failed." });
         }
+    });
 
-    } catch (err) {
-        console.error("[DEBUG-MAIN] Activation Error:", err);
-        event.reply('license-response', { success: false, reason: "Invalid file format or connection error." });
-    }
-});
-
-// THE MANUAL OVERRIDE BYPASS
-ipcMain.on('validate-license-string', async (event, rawJson) => {
-    try {
-        const tempPath = path.join(app.getPath('temp'), 'manual_license.mint');
-        fs.writeFileSync(tempPath, rawJson);
-        ipcMain.emit('validate-license', event, tempPath);
-    } catch (e) {
-        event.reply('license-response', { success: false, reason: "Manual entry failed." });
-    }
-});
-
-// --- DEVELOPER SHORTCUT: NUKE LICENSE ---
-ipcMain.on('nuke-license', () => {
-    try {
-        const licensePath = licenseMgr.getLicensePath('HexStack');
-        if (fs.existsSync(licensePath)) {
-            fs.unlinkSync(licensePath);
+    ipcMain.on('nuke-license', () => {
+        try {
+            const licensePath = licenseMgr.getLicensePath('HexStack');
+            if (fs.existsSync(licensePath)) {
+                fs.unlinkSync(licensePath);
+            }
+            console.log("License Nuked. Restarting as Core.");
+            app.relaunch();
+            app.exit(0);
+        } catch (e) {
+            console.error("Failed to nuke license:", e);
         }
-        console.log("License Nuked. Restarting as Core.");
-        app.relaunch();
-        app.exit(0);
-    } catch (e) {
-        console.error("Failed to nuke license:", e);
-    }
-});
+    });
 
-    // --- 1. UPGRADED EXPORT ENGINE ---
     ipcMain.on('download-history', async (event, payloadStr, format) => {
         if (!IS_PRO_BUILD) return; 
         
         let ext = format || 'txt';
         let filterName = 'Text Files';
 
-        // Set the correct labels for the OS dialogue
         if (format === 'css') filterName = 'CSS Stylesheet';
         else if (format === 'json') filterName = 'JSON File';
 
         try {
-            // Summon the native OS save window
             const { filePath } = await dialog.showSaveDialog(mainWindow, { 
                 defaultPath: `HexStack_Palette.${ext}`,
                 filters: [{ name: filterName, extensions: [ext] }]
             });
             
-            // If the user clicks "Save" (and doesn't cancel)
             if (filePath) {
-                // Write the pre-formatted string directly to the hard drive
                 fs.writeFileSync(filePath, payloadStr, 'utf-8');
-                
-                // Trigger the success toast
                 if (mainWindow) mainWindow.webContents.send('show-notification', { title: 'Export Complete', body: `Saved as .${ext}` });
             }
         } catch (error) {
@@ -591,19 +553,17 @@ ipcMain.on('nuke-license', () => {
     ipcMain.handle('storage-get', (event, keys) => db.getBulk(keys));
 
     ipcMain.handle('storage-set', (event, data) => {
-    // [FIX] Strict enforcement of Core limits on the backend
-    if (!IS_PRO_BUILD) {
-        if (data.maxItems && data.maxItems > 50) {
-            data.maxItems = 50; 
+        if (!IS_PRO_BUILD) {
+            if (data.maxItems && data.maxItems > 50) {
+                data.maxItems = 50; 
+            }
+            if (data.colors && data.colors.length > 50) {
+                data.colors = data.colors.slice(0, 50);
+            }
         }
-        // If they try to save a massive color array, truncate it
-        if (data.colors && data.colors.length > 50) {
-            data.colors = data.colors.slice(0, 50);
-        }
-    }
-    db.setBulk(data);
-    return true;
-});
+        db.setBulk(data);
+        return true;
+    });
 
     ipcMain.on('close-app', () => { if(mainWindow) mainWindow.hide(); });
     ipcMain.on('minimize-window', () => { if (mainWindow) mainWindow.minimize(); });
@@ -612,12 +572,10 @@ ipcMain.on('nuke-license', () => {
         if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMaximized()) {
             const currentBounds = mainWindow.getBounds();
             
-            // [FIX] Determine base width to calculate the true scale factor
             let baseW = (layoutState === 2) ? 750 : 535;
             let targetW = typeof requestedWidth === 'number' ? requestedWidth : baseW;
             let scaleFactor = targetW / baseW;
 
-            // [FIX] Dynamically scale the minimum heights so Windows locks match the zoom
             let minH = Math.floor(160 * scaleFactor);
 
             if (layoutState === 2) {
@@ -628,17 +586,14 @@ ipcMain.on('nuke-license', () => {
 
             const finalH = Math.max(minH, Math.floor(newHeight));
 
-            // Grab the active monitor's dimensions (Now grabbing width and x as well)
             const currentScreen = screen.getDisplayMatching(currentBounds);
             const { height: screenHeight, width: screenWidth, x: screenX, y: screenY } = currentScreen.workArea; 
             
             let newY = currentBounds.y;
             let newX = currentBounds.x;
 
-            // --- THE 10px SAFE ZONE PADDING ---
             const PADDING = 10;
 
-            // --- Y-AXIS BOUNDARY CHECK (Top/Bottom) ---
             const projectedBottomEdge = newY + finalH;
             const safeBottomEdge = screenY + screenHeight - PADDING;
             const safeTopEdge = screenY + PADDING;
@@ -650,37 +605,31 @@ ipcMain.on('nuke-license', () => {
                 newY = safeTopEdge;
             }
 
-            // --- X-AXIS BOUNDARY CHECK (Left/Right) ---
             const projectedRightEdge = newX + targetW;
             const safeRightEdge = screenX + screenWidth - PADDING;
             const safeLeftEdge = screenX + PADDING;
 
             if (projectedRightEdge > safeRightEdge) {
-                newX = safeRightEdge - targetW; // Push left, leaving 10px gap
+                newX = safeRightEdge - targetW;
             }
             if (newX < safeLeftEdge) {
-                newX = safeLeftEdge; // Push right, leaving 10px gap
+                newX = safeLeftEdge;
             }
 
-            // --- THE NEW SAFETY CHECK ---
-            // Do not trigger a redraw if the window is already the correct size and position!
             if (currentBounds.width === targetW && currentBounds.height === finalH && currentBounds.y === newY && currentBounds.x === newX) {
                 return; 
             }
 
-            // 1. Temporarily unclamp limits so Windows and Chromium don't fight
             mainWindow.setMinimumSize(1, 1);
             mainWindow.setMaximumSize(9999, 9999);
             
-            // 2. Safely apply the exact new bounds
             mainWindow.setBounds({ 
-                x: newX, 
-                y: newY, 
-                width: targetW, 
-                height: finalH 
-            }, true);
+    x: newX, 
+    y: newY, 
+    width: targetW, 
+    height: finalH 
+}, false);
 
-            // 3. Immediately re-apply the strict stretch locks
             mainWindow.setMinimumSize(targetW, minH);
             mainWindow.setMaximumSize(targetW, 9999);
         }
@@ -690,18 +639,15 @@ ipcMain.on('nuke-license', () => {
         if (mainWindow) mainWindow.webContents.setZoomFactor(factor);
     });
 
-   // --- [FIX 1] BULLETPROOF ALWAYS-ON-TOP ---
     ipcMain.on('set-always-on-top', (event, state) => {
-    isAlwaysOnTop = state;
-    db.set('alwaysOnTop', state); // Ensure it's saved to the DB
-    if (mainWindow && !mainWindow.isDestroyed()) { 
-        // Use 'pop-up-menu' level to stay above the taskbar if needed
-        mainWindow.setAlwaysOnTop(state, 'pop-up-menu');
-        if (state) mainWindow.moveTop();
-    }
-});
+        isAlwaysOnTop = state;
+        db.set('alwaysOnTop', state);
+        if (mainWindow && !mainWindow.isDestroyed()) { 
+            mainWindow.setAlwaysOnTop(state, 'pop-up-menu');
+            if (state) mainWindow.moveTop();
+        }
+    });
 
-    // --- [FIX 2] SINGLE-FIRE NOTIFICATIONS ---
     ipcMain.on('show-notification', (event, { title, body }) => {
         if (db.get('notificationsEnabled') && Notification.isSupported()) {
             try {
@@ -742,24 +688,30 @@ ipcMain.on('nuke-license', () => {
         }
         if (mainWindow && !mainWindow.isDestroyed()) { 
             mainWindow.show(); 
-            // Re-assert top-level dominance when returning from the picker
             if (isAlwaysOnTop) mainWindow.setAlwaysOnTop(true, 'pop-up-menu');
             mainWindow.focus(); 
         }
     });
 
-    ipcMain.on('toggle-startup', (event, isEnabled) => {
+// In main.js (~line 525)
+ipcMain.on('toggle-startup', (event, isEnabled) => {
     db.set('launchOnStartup', isEnabled);
 
-    // THE SHIELD: Only register to Windows if compiled into an actual .exe
     if (app.isPackaged) {
+        // Built EXE Production Path
         app.setLoginItemSettings({
             openAtLogin: isEnabled,
-            path: app.getPath('exe'), 
+            path: app.getPath('exe'),
             args: ['--hidden']
         });
     } else {
-        console.log("🛠️ DEV MODE: Bypassing Windows startup registry.");
+        // Dev Mode / Unpackaged Path
+        app.setLoginItemSettings({
+            openAtLogin: isEnabled,
+            path: process.execPath,
+            args: [path.resolve(__dirname, 'main.js'), '--hidden']
+        });
     }
+    console.log(`[STARTUP] Launch on startup set to: ${isEnabled}`);
 });
-} // <-- Keep this final closing bracket!
+}
